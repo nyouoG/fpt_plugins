@@ -23,7 +23,7 @@ class PosLocker(PluginBase):
         addr_move_func = am.get("move func addr", scan_pattern, pattern_actor_move)
         self.storage.save()
 
-        self.main_addr = read_memory(c_int64, ptr_main)
+        self.main_addr = cast(ptr_main,POINTER(c_int64))
         self.main_coor = read_memory(PointerStruct(c_float * 3, 160), ptr_main)
         self._enable = False
 
@@ -32,7 +32,7 @@ class PosLocker(PluginBase):
             argtypes = [c_int64, c_float, c_float, c_float]
 
             def hook_function(_self, addr, x, z, y):
-                if self.main_addr == addr and (self._enable or self.get_result()):
+                if self.main_addr[0] == addr and (self._enable or self.get_result()):
                     return _self.original(addr, *self.main_coor.value)
                 return _self.original(addr, x, z, y)
 
@@ -80,4 +80,8 @@ class PosLocker(PluginBase):
         self.statements.add(statement)
 
     def remove_statement(self, statement):
-        self.statements.remove(statement)
+        try:
+            self.statements.remove(statement)
+            return True
+        except KeyError:
+            return False
