@@ -94,7 +94,14 @@ class Teleporter(PluginBase):
         api.command.register(command, self.process_command)
         # frame_inject.register_continue_call(self.lock_action)
         self.lock_coor = None
-        self.register_api('LockCoor', type('obj', (object,), {'enable': self.enable_lock, 'disable': self.disable_lock}))
+        self.register_api('LockCoor', type('obj', (object,), {
+            'enable': self.enable_lock,
+            'disable': self.disable_lock,
+            'is_locked': self.is_locked,
+        }))
+
+    def is_locked(self):
+        return self.lock_hook.is_enabled
 
     @property
     def coor_main(self):
@@ -147,12 +154,12 @@ class Teleporter(PluginBase):
         elif a1 == "get":
             return "%.2f %.2f %.2f" % (self.coor_main.x, self.coor_main.y, self.coor_main.z)
         elif a1 == 'lock':
-            if self.lock_coor is None:
-                self.enable_lock()
-                return "lock at [%.2f,%.2f,%.2f]" % self.lock_coor
-            else:
+            if self.is_locked():
                 self.disable_lock()
                 return "unlocked"
+            else:
+                self.enable_lock()
+                return "lock at [%.2f,%.2f,%.2f]" % self.lock_coor
         elif a1 == "list":
             zid, data = self.get_zone_data()
             return "%s (%s): %s" % (zid, len(data), '/'.join(data.keys()))
