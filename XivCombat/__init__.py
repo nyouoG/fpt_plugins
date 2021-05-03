@@ -4,6 +4,7 @@ from traceback import format_exc
 from time import perf_counter
 
 from FFxivPythonTrigger.AttrContainer import AttributeNotFoundException
+from FFxivPythonTrigger.Logger import debug
 from . import LogicData
 
 # action_sheet = lumina.lumina.GetExcelSheet[Action]()
@@ -14,13 +15,14 @@ fight_strategies = dict()
 common_strategies = dict()
 is_area_action_cache = dict()
 
-from . import Machinist, Gunbreaker, DarkKnight, Warrior, Dancer
+from . import Machinist, Gunbreaker, DarkKnight, Warrior, Dancer, Summoner
 
 fight_strategies |= Machinist.fight_strategies
 fight_strategies |= Gunbreaker.fight_strategies
 fight_strategies |= DarkKnight.fight_strategies
 fight_strategies |= Warrior.fight_strategies
 fight_strategies |= Dancer.fight_strategies
+fight_strategies |= Summoner.fight_strategies
 
 common_strategies |= Dancer.common_strategies
 
@@ -45,6 +47,7 @@ def get_mo_target():
 
 
 def use_skill(action_id, target_id=0xe0000000):
+    debug("t",action_id)
     if action_id not in is_area_action_cache:
         is_area_action_cache[action_id] = action_sheet[action_id]['TargetArea']
     if is_area_action_cache[action_id]:
@@ -98,19 +101,20 @@ class XivCombat(PluginBase):
                     except LogicData.TargetIsSelfException:
                         pass
                     else:
-                        ans = None
-                        if round_data.job in common_strategies:
-                            ans = common_strategies[round_data.job](round_data)
-                        if (ans is None) and api.XivMemory.combat_data.is_in_fight and (round_data.job in fight_strategies):
-                            ans = fight_strategies[round_data.job](round_data)
-                        if ans is not None:
-                            action, target = ans if type(ans) == tuple else (ans, round_data.target.id)
-                            if (action, target) == self.nSkill[0]:
-                                self.nSkill = [None, 0]
-                            elif (action, target) == self.nAbility[0]:
-                                self.nAbility = [None, 0]
-                            use_skill(action, target)
-                            raise ContinueException()
+                        if not (round_data.me.CastingID or round_data.target.isFriendly):
+                            ans = None
+                            if round_data.job in common_strategies:
+                                ans = common_strategies[round_data.job](round_data)
+                            if (ans is None) and api.XivMemory.combat_data.is_in_fight and (round_data.job in fight_strategies):
+                                ans = fight_strategies[round_data.job](round_data)
+                            if ans is not None:
+                                action, target = ans if type(ans) == tuple else (ans, round_data.target.id)
+                                if (action, target) == self.nSkill[0]:
+                                    self.nSkill = [None, 0]
+                                elif (action, target) == self.nAbility[0]:
+                                    self.nAbility = [None, 0]
+                                use_skill(action, target)
+                                raise ContinueException()
                 if self.nSkill[0] is not None:
                     use_skill(*self.nSkill[0])
                     self.nSkill = [None, 0]

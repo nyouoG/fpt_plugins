@@ -1,7 +1,8 @@
 from FFxivPythonTrigger import api, Utils, SaintCoinach
-#from Lumina.Excel.GeneratedSheets import Action
+
+# from Lumina.Excel.GeneratedSheets import Action
 action_sheet = SaintCoinach.realm.game_data.get_sheet('Action')
-#action_sheet = lumina.lumina.GetExcelSheet[Action]()
+# action_sheet = lumina.lumina.GetExcelSheet[Action]()
 
 invincible_effects = {325, 394, 529, 656, 671, 775, 776, 895, 969, 981, 1570, 1697, 1829, }
 
@@ -17,11 +18,13 @@ class TargetIsSelfException(Exception):
 class TargetNotExistsException(Exception):
     pass
 
+
 class ActorDeadException(Exception):
     pass
 
+
 def is_actor_status_can_damage(actor):
-    for eid,_ in actor.effects.get_items():
+    for eid, _ in actor.effects.get_items():
         if eid in invincible_effects:
             return False
     return True
