@@ -47,7 +47,7 @@ def get_mo_target():
 
 
 def use_skill(action_id, target_id=0xe0000000):
-    debug("t",action_id)
+    # debug("t",action_id)
     if action_id not in is_area_action_cache:
         is_area_action_cache[action_id] = action_sheet[action_id]['TargetArea']
     if is_area_action_cache[action_id]:
