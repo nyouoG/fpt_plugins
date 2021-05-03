@@ -68,7 +68,7 @@ def summoner_logic(data: LogicData):
     need_dot2 = lv >= 6 and (d2 not in t_effects or t_effects[d2].timer < 3)
     d3 = (need_dot1 or need_dot2 or not data[3581]) and not data[3580]
     a4 = 0 if 1212 not in data.effects else data.effects[1212].param
-    need_speed = data[16508] <= data.gauge.aetherflowStacks * 2.5 or min(data[16512], data[16509]) < (5 if data[3581] > 10 or data.gauge.bahamutReady else 30) or d3 or not data[3581]
+    need_speed = data[16508] <= data.gauge.aetherflowStacks * 2.5 +0.5 or min(data[16512], data[16509]) < (5 if data[3581] > 10 or data.gauge.bahamutReady else 30) or d3 or not data[3581] or not data[184]
     is_single = data.is_single(dis=30, limit=3)
     count_type = 2 if data.gauge.phoenixReady else 1 if data.gauge.ReturnSummon else 0
 
