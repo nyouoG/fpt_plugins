@@ -73,14 +73,16 @@ def summoner_logic(data: LogicData):
     count_type = 2 if data.gauge.phoenixReady else 1 if data.gauge.ReturnSummon else 0
 
     if data.gcd > 1:
+        if data.nAbility:
+            return data.nAbility
         if (data.gauge.stanceMilliseconds and count_type == 0) and data.gauge.stanceMilliseconds < data.gcd * 1000 + 500 and lv >= 60:
             return 3582
-        if data.gauge.bahamutReady and  min(data[16512], data[16509]) > 20:
+        if data.gauge.bahamutReady and min(data[16512], data[16509]) > 20 and data[184]:
             return 7427
         if data.gauge.stanceMilliseconds and count_type and not data[7429]:
             return 7429
-        if d3: return 3580
-        if not data[3581]: return 3581
+        if d3 or not data[3581]: return 3580
+        if not data[3581] and data[184]: return 3581
         if not data[16508] and not data.gauge.aetherflowStacks:
             return 16508 if is_single or lv < 35 else 16510
         if not (data[184] or data.gauge.ReturnSummon): return 184
@@ -88,6 +90,8 @@ def summoner_logic(data: LogicData):
             if is_single and d1 in t_effects and d2 in t_effects and not data[181]: return 181
             if not is_single and lv >= 52 and not data[3578]: return 3578
     elif data.gcd < 0.2:
+        if data.nSkill:
+            return data.nSkill
         global last_d2
         if data[3580] > 5:
             if not api.XivMemory.movement.speed and need_dot2 and last_d2 + 3 < time.perf_counter():
