@@ -123,7 +123,7 @@ def summoner_logic(data: LogicData):
 
         aether_use = data[16508] <= data.gauge.aetherflowStacks * 2.5 + 0.5  # 是否需要泄以太
         ea_use = not data.gauge.ReturnSummon and min(data[16512], data[16509]) <= (5 if summon_type == 2 or summon_type == 4 else 30)  # 是否需要泄灵攻
-        bahamut_last_gcd = data.gauge.stanceMilliseconds < 2.4  # 巴哈最后一个gcd打瞬发防止丢波
+        bahamut_last_gcd = summon_type == 3 and data.gauge.stanceMilliseconds < 2.4  # 巴哈最后一个gcd打瞬发防止丢波
 
         need_speed = api.XivMemory.movement.speed or aether_use or ea_use or d3
         need_speed = need_speed or enkindle_use or summon_enkindle_use or bahamut_last_gcd or not data[3581]
