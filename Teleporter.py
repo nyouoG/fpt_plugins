@@ -18,8 +18,6 @@ functions (*[arg] is optional args):
     [set]:          set current coordinates
                     format: /e @tp set [x:float] [y:float] [z:float]
                     
-    [lock]:         lock current coordinates by a "While True" loop
-    
     [list]:         list saved coordinates in current zone
     
     [save]:         save coordinates with a name
@@ -72,57 +70,20 @@ class Teleporter(PluginBase):
         am = AddressManager(self.storage.data, self.logger)
         ptr_main = am.get("main ptr", scan_address, pattern_main, add=0x14, cmd_len=8)
         addr_fly = am.get("fly addr", scan_address, pattern_fly, cmd_len=7, add=16)
-        addr_move_func = am.get("move func addr", scan_pattern, pattern_actor_move)
         self.storage.save()
 
-        self.coor_main_addr = read_memory(c_int64, ptr_main)
         self._coor_main = read_memory(MainCoor, ptr_main)
         self.coor_fly = read_memory(Vector, addr_fly)
 
-        class ActorMoveHook(Hook):
-            restype = c_int64
-            argtypes = [c_int64, c_float, c_float, c_float]
-
-            def hook_function(_self, addr, x, z, y):
-                if self.coor_main_addr == addr:
-                    return _self.original(addr, self.lock_coor[0], self.lock_coor[2], self.lock_coor[1])
-                else:
-                    return _self.original(addr, x, z, y)
-
-        self.lock_hook = ActorMoveHook(addr_move_func)
-
         api.command.register(command, self.process_command)
-        # frame_inject.register_continue_call(self.lock_action)
         self.lock_coor = None
-        self.register_api('LockCoor', type('obj', (object,), {
-            'enable': self.enable_lock,
-            'disable': self.disable_lock,
-            'is_locked': self.is_locked,
-        }))
-
-    def is_locked(self):
-        return self.lock_hook.is_enabled
 
     @property
     def coor_main(self):
         return self._coor_main.value
 
-    def enable_lock(self):
-        self.lock_coor = (self.coor_main.x, self.coor_main.y, self.coor_main.z)
-        self.lock_hook.enable()
-
-    def disable_lock(self):
-        self.lock_hook.disable()
-        # self.lock_coor = None
-
-    def lock_action(self):
-        if self.lock_coor is not None:
-            self.tp(*self.lock_coor)
-
     def _onunload(self):
         api.command.unregister(command)
-        self.lock_hook.uninstall()
-        # frame_inject.unregister_continue_call(self.lock_action)
 
     def tp(self, x=None, y=None, z=None):
         if self.coor_main is not None:
@@ -153,13 +114,6 @@ class Teleporter(PluginBase):
             return self.tp(float(args[1]), float(args[2]), float(args[3]))
         elif a1 == "get":
             return "%.2f %.2f %.2f" % (self.coor_main.x, self.coor_main.y, self.coor_main.z)
-        elif a1 == 'lock':
-            if self.is_locked():
-                self.disable_lock()
-                return "unlocked"
-            else:
-                self.enable_lock()
-                return "lock at [%.2f,%.2f,%.2f]" % self.lock_coor
         elif a1 == "list":
             zid, data = self.get_zone_data()
             return "%s (%s): %s" % (zid, len(data), '/'.join(data.keys()))
