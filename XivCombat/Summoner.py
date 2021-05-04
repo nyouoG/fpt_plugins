@@ -83,9 +83,6 @@ def summoner_logic(data: LogicData):
 
     enkindle_use = not (data[184] or data.gauge.ReturnSummon)  # 宝宝大招 —— cd好了 and 不在不死鸟龙神召唤
     summon_enkindle_use = data.gauge.ReturnSummon and not data[7429]  # 是否可以使用迸发 —— 好了就用
-    aether_use = data[16508] <= data.gauge.aetherflowStacks * 2.5 + 0.5  # 是否需要泄以太
-    ea_use = min(data[16512], data[16509]) < (5 if summon_type == 2 or summon_type == 4 else 30)  # 是否需要泄灵攻
-    need_speed = api.XivMemory.movement.speed or aether_use or ea_use or d3 or not data[3581] or enkindle_use or summon_enkindle_use
 
     if data.gcd > 1:
         if data.nAbility:
@@ -112,7 +109,7 @@ def summoner_logic(data: LogicData):
             return data.nSkill
 
         global last_d2
-        if data[3580] > 5:  # 三灾cd中补毒相关
+        if min(data[3580], data[3581]) > 5:  # 三灾cd中补毒相关
             if not api.XivMemory.movement.speed and need_dot2 and last_d2 + 3 < time.perf_counter():
                 last_d2 = time.perf_counter()
                 return 168  # 读条毒，需要防止对方buff未刷新而重复读
@@ -124,8 +121,15 @@ def summoner_logic(data: LogicData):
         r4 = 0 if 1212 not in data.effects else data.effects[1212].param  # r4层数
         if r4 >= 4: return 172  # 防止r4溢出
 
-        if need_speed and summon_type != 1:
-            if min(data[16512], data[16509]) < 30 and not data.gauge.ReturnSummon:
+        aether_use = data[16508] <= data.gauge.aetherflowStacks * 2.5 + 0.5  # 是否需要泄以太
+        ea_use = not data.gauge.ReturnSummon and min(data[16512], data[16509]) <= (5 if summon_type == 2 or summon_type == 4 else 30)  # 是否需要泄灵攻
+        bahamut_last_gcd = data.gauge.stanceMilliseconds < 2.4  # 巴哈最后一个gcd打瞬发防止丢波
+
+        need_speed = api.XivMemory.movement.speed or aether_use or ea_use or d3
+        need_speed = need_speed or enkindle_use or summon_enkindle_use or bahamut_last_gcd or not data[3581]
+
+        if need_speed and (summon_type != 1 or ea_use):  # 巴哈附体期间如果需要泄灵攻依然打灵攻
+            if ea_use:
                 return 16509 if data[16509] < data[16512] else 16512  # 有灵攻就用
             return 172  # r2摆烂咯（好吧应该有r4
         else:
