@@ -64,7 +64,7 @@ def summoner_logic(data: LogicData):
     global last_d2, last_ea
     is_single = data.is_single(dis=30, limit=3)
     lv = data.me.level
-    t_effects = data.target.effects.get_dict(source = data.me.id)
+    t_effects = data.target.effects.get_dict(source=data.me.id)
 
     if data.gauge.phoenixReady:
         summon_type = 5 if data.gauge.stanceMilliseconds else 4  # 不死鸟附体ing/准备
