@@ -101,7 +101,7 @@ class XivCombat(PluginBase):
                     except LogicData.TargetIsSelfException:
                         pass
                     else:
-                        if not (round_data.me.CastingID or round_data.target.isFriendly):
+                        if not (round_data.me.CastingID):
                             ans = None
                             if round_data.job in common_strategies:
                                 ans = common_strategies[round_data.job](round_data)
