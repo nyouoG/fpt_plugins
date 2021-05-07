@@ -85,7 +85,7 @@ class XivCombat(PluginBase):
         frame_inject.unregister_continue_call(self.action)
 
     def action(self):
-        if self.work and perf_counter() > self.next_work_time:
+        if self.work and perf_counter() > self.next_work_time and not api.XivMemory.combat_data.skill_queue.mark1:
             next_period = 0.1
             try:
                 if self.state['use']:
@@ -115,7 +115,7 @@ class XivCombat(PluginBase):
                                     self.nAbility = [None, 0]
                                 use_skill(action, target)
                                 raise ContinueException()
-                if self.nSkill[0] is not None:
+                if self.nSkill[0] is not None and api.XivMemory.combat_data.cool_down_group.gcd_group.remain<0.2:
                     use_skill(*self.nSkill[0])
                     self.nSkill = [None, 0]
                 elif self.nAbility[0] is not None:
