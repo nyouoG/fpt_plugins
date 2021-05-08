@@ -50,6 +50,9 @@ class LogicData(object):
         else:
             self.target = None
 
+        if self.target is not None and not is_actor_status_can_damage(self.target):
+            self.target = None
+
         enemies = Utils.query(api.XivMemory.combat_data.enemies.get_item(), key=lambda x: x.can_select)
         enemies = api.XivMemory.actor_table.get_actors_by_id(*[enemy.id for enemy in enemies])
 
