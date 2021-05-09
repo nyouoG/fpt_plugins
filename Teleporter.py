@@ -77,7 +77,7 @@ class Teleporter(PluginBase):
 
         api.command.register(command, self.process_command)
         self.lock_coor = None
-        self.register_api('Coordinate',self.coor_main)
+        self.register_api('Coordinate', lambda: self.coor_main)
 
     @property
     def coor_main(self):
