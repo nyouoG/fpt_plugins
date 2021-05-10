@@ -92,9 +92,9 @@ def summoner_logic(data: LogicData):
         if data.nAbility:
             return data.nAbility
         if not data[7423] and data.is_violent:
-            if summon_type == 1 and data.gauge.stanceMilliseconds < 6000 or summon_type == 2 or summon_type == 4 and data[3581] < 6:
+            if summon_type == 1 and data.gauge.stanceMilliseconds < 6000 or enkindle_use or summon_type == 2 or summon_type == 4 and data[3581] < 6:
                 last_ea = time.perf_counter() + 1
-                return 7423  # 龙神附体末端 ， 召唤前 灵护好了就用
+                return 7423  # 龙神附体末端 ， 召唤前,大招前 灵护好了就用
         if summon_type == 1 and data.gauge.stanceMilliseconds < data.gcd * 1000 + 500 and lv >= 60:
             return 3582  # 死星核爆 附体剩余时间少于 (剩余gcd+0.5s)
         if data.gauge.bahamutReady and min(data[16512], data[16509]) > 20 and data[184] > 20 and should_summon and data.is_violent and data.gcd < 2.2:
