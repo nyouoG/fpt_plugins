@@ -10,7 +10,11 @@ class CraftAutomation(PluginBase):
     def __init__(self):
         super().__init__()
         self.count = 0
+        self.register_event('craft_action',self.next_event)
         api.command.register(command, self.process_command)
+
+    def next_event(self):
+        self.count+=1
 
     def _start(self):
         import XivCraft
@@ -24,10 +28,9 @@ class CraftAutomation(PluginBase):
         XivCraft.callback = self.new_callback
 
     def new_callback(self, ans: str):
-        temp = self.count + 1
-        self.count += 1
+        temp = self.count
         cmd = '/ac "%s"' % (ans if ans != "terminate" else '坯料加工')
         api.Magic.macro_command(cmd)
-        time.sleep(10)
+        time.sleep(5)
         if self.count == temp:
-            api.Magic.macro_command(cmd)
+            self.new_callback(ans)
