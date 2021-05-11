@@ -13,7 +13,7 @@ class CraftAutomation(PluginBase):
         self.register_event('craft_action',self.next_event)
         api.command.register(command, self.process_command)
 
-    def next_event(self):
+    def next_event(self,evt):
         self.count+=1
 
     def _start(self):
