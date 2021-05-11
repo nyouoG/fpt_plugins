@@ -4,8 +4,8 @@ import time
 command = "@ca"
 
 
-class TpKiller(PluginBase):
-    name = "TpKiller"
+class CraftAutomation(PluginBase):
+    name = "CraftAutomation"
 
     def __init__(self):
         super().__init__()
