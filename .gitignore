@@ -1,8 +1,6 @@
 ignore/
 AppData/
 .idea/
-Test*.py
-Debug*.py
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
