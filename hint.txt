@@ -1,2 +1,0 @@
-import XivCraft
-XivCraft.callback = lambda ans: api.Magic.macro_command('/ac "%s"' % ans)
