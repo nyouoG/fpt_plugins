@@ -42,4 +42,5 @@ class CraftAutomation(PluginBase):
         api.Magic.macro_command(cmd)
         time.sleep(5)
         if self.count == temp:
+            self.logger.debug(f"resend '{s}'")
             self.new_callback(s)
