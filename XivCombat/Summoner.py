@@ -79,8 +79,8 @@ def summoner_logic(data: LogicData):
 
     d1 = 1214 if lv >= 66 else 189 if lv >= 26 else 179
     d2 = 1215 if lv >= 66 else 180
-    need_dot1 = lv >= 2 and (d1 not in t_effects or t_effects[d1].timer < 3) and data.time_to_kill_target > 15
-    need_dot2 = lv >= 6 and (d2 not in t_effects or t_effects[d2].timer < 3) and data.time_to_kill_target > 15
+    need_dot1 = lv >= 2 and (d1 not in t_effects or t_effects[d1].timer < 3) and data.time_to_kill_target > 20
+    need_dot2 = lv >= 6 and (d2 not in t_effects or t_effects[d2].timer < 3) and data.time_to_kill_target > 20
     d3 = (need_dot1 or need_dot2 or not data[3581]) and not data[3580]  # 是否需要三灾 —— 任意一个dot需要补 or 附体冷却好
 
     enkindle_use = not (data[184] or data.gauge.ReturnSummon) and data.is_violent  # 宝宝大招 —— cd好了 and 不在不死鸟龙神召唤
