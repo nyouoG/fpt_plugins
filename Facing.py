@@ -14,6 +14,7 @@ class TestFacing(PluginBase):
 
     def _onunload(self):
         frame_inject.unregister_continue_call(self.work)
+        api.command.unregister(command)
 
     def work(self):
         if not self.enable:
