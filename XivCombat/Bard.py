@@ -1,4 +1,3 @@
-from FFxivPythonTrigger import api
 from .LogicData import LogicData
 
 """
@@ -54,23 +53,25 @@ def bard_logic(data: LogicData):
             return 98
 
 
-def single(me):
-    return 98 if 122 in me.effects.get_dict() else 97
+fight_strategies = {23: bard_logic}
 
-
-def dot(me):
-    lv = me.level
-    target = api.XivMemory.targets.current
-    if target is None: return 100
-    poison, wind = (124, 129) if lv < 64 else (1200, 1201)
-    t_effects = target.effects.get_dict()
-    if poison not in t_effects or lv < 30: return 100
-    if wind not in t_effects: return 113
-    if lv > 56: return 3560
-    return 100 if t_effects[poison].timer < t_effects[wind] else 113
-
-
-combos = {
-    98: single,  # 直线射击：自动直线
-    3560: dot  # 伶牙俐齒：智能dot
-}
+# def single(me):
+#     return 98 if 122 in me.effects.get_dict() else 97
+#
+#
+# def dot(me):
+#     lv = me.level
+#     target = api.XivMemory.targets.current
+#     if target is None: return 100
+#     poison, wind = (124, 129) if lv < 64 else (1200, 1201)
+#     t_effects = target.effects.get_dict()
+#     if poison not in t_effects or lv < 30: return 100
+#     if wind not in t_effects: return 113
+#     if lv > 56: return 3560
+#     return 100 if t_effects[poison].timer < t_effects[wind] else 113
+#
+#
+# combos = {
+#     98: single,  # 直线射击：自动直线
+#     3560: dot  # 伶牙俐齒：智能dot
+# }
