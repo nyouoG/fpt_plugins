@@ -72,6 +72,7 @@ class LogicData(object):
         self.gauge = api.XivMemory.player_info.gauge
         self.effects = self.me.effects.get_dict()
         self.gcd = api.XivMemory.combat_data.cool_down_group.gcd_group.remain
+        self.gcd_total = api.XivMemory.combat_data.cool_down_group.gcd_group.total
         self.time_to_kill_target = self.target.currentHP / max(api.CombatMonitor.actor_tdps(self.target.id), 1)
         self.is_violent = config.get('violent') and self.time_to_kill_target > 5
         self.skill_cd_cache = dict()
