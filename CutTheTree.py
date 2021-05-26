@@ -31,9 +31,9 @@ class Solver(object):
     def score(self, score):
         self.history.append(score)
         if score == "Fail":
-            self.pool = [i for i in self.pool if abs(i - self.prev) > 20]
+            self.pool = [i for i in self.pool if abs(i - self.prev) >= 20]
         elif score == "Normal":
-            self.pool = [i for i in self.pool if 10 < abs(i - self.prev) <= 20]
+            self.pool = [i for i in self.pool if 10 <= abs(i - self.prev) <= 20]
             self.step = min(self.step, 5)
         elif score == "Great":
             self.pool = [i for i in self.pool if abs(i - self.prev) <= 10]
@@ -46,8 +46,8 @@ class Solver(object):
             ans = 20
         elif self.history[-1] == "Fail":
             ans = min(self.prev + 35, 90)
-        elif len(self.pool) == 1:
-            ans = self.pool[0]
+        elif len(self.pool) <= 1:
+            ans = self.prev
         else:
             ans = [i for i in self.pool if abs(i - self.pool[0]) <= self.step][-1]
         self.prev = ans
@@ -73,10 +73,11 @@ class CutTheTree(PluginBase):
         res = data.cut_result.value()
         if res is not None:
             self.solver.score(res)
-        # self.logger(data)
+        self.logger(data)
 
     def send_work(self, event):
-        # self.logger(send_packet.from_buffer(event.raw_msg))
+        data=send_packet.from_buffer(event.raw_msg)
+        self.logger(data)
         pass
 
     def makeup_data(self, raw):
