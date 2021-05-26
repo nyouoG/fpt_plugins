@@ -4,6 +4,9 @@ from FFxivPythonTrigger.memory import write_ubytes
 
 command = "@tpKill"
 
+"""
+ToDo:???
+"""
 
 def get_pos():
     me = api.Coordinate()
