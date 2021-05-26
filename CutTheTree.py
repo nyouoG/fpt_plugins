@@ -13,17 +13,17 @@ send_packet = OffsetStruct({
     'game_state': (EnumStruct(c_ubyte, {0x07: "Start Game", 0x09: "Difficulty choice", 0x0A: "Felling", 0x0B: "Start Next Round"}), 38),
     'param': (c_ubyte, 40)
 })
-
+MAX=101
 
 class Solver(object):
     def __init__(self):
-        self.pool = list(range(91))
+        self.pool = list(range(MAX))
         self.prev = None
         self.history = list()
         self.step = 20
 
     def reset(self):
-        self.pool = list(range(91))
+        self.pool = list(range(MAX))
         self.prev = None
         self.history = list()
         self.step = 20
@@ -31,13 +31,13 @@ class Solver(object):
     def score(self, score):
         self.history.append(score)
         if score == "Fail":
-            self.pool = [i for i in self.pool if abs(i - self.prev) >= 20]
+            self.pool = [i for i in self.pool if abs(i - self.prev) > 20]
         elif score == "Normal":
             self.pool = [i for i in self.pool if 10 <= abs(i - self.prev) <= 20]
             self.step = min(self.step, 5)
         elif score == "Great":
             self.pool = [i for i in self.pool if abs(i - self.prev) <= 10]
-            self.step = min(self.step, 1)
+            self.step = min(self.step, 3)
         elif score == "Perfect":
             self.pool = [self.prev]
 
@@ -45,7 +45,7 @@ class Solver(object):
         if self.prev is None:
             ans = 20
         elif self.history[-1] == "Fail":
-            ans = min(self.prev + 35, 90)
+            ans = min(self.prev + 35, MAX-1)
         elif len(self.pool) <= 1:
             ans = self.prev
         else:
