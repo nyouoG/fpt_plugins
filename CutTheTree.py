@@ -1,7 +1,9 @@
 from ctypes import *
+from random import random
 from FFxivPythonTrigger import *
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct, EnumStruct
 import time
+import math
 
 recv_packet = OffsetStruct({
     'cut_result': (EnumStruct(c_ubyte, {0x0: "Fail", 0x1: "Normal", 0x2: "Great", 0x3: "Perfect"}), 44),
@@ -16,7 +18,14 @@ send_packet = OffsetStruct({
         38),
     'param': (c_ubyte, 40)
 })
+
 MAX = 101
+NPC_Name = "孤树无援"
+
+KEY_CONFIRM = 96
+KEY_CANCEL = 110
+KEY_LEFT = 100
+KEY_UP = 104
 
 
 class Solver(object):
@@ -24,7 +33,8 @@ class Solver(object):
         self.pool = list(range(MAX))
         self.prev = None
         self.history = list()
-        self.step = 20
+        self.step = 10
+        self.progress = 10
 
         self.start_time = 0
         self.time_left = 0
@@ -34,10 +44,12 @@ class Solver(object):
         self.pool = list(range(MAX))
         self.prev = None
         self.history = list()
-        self.step = 20
+        self.step = 10
+        self.progress = 10
 
-    def score(self, score):
-        self.history.append(score)
+    def score(self, score, progress):
+        self.progress = progress
+        self.history.append((self.prev, score))
         if score == "Fail":
             self.pool = [i for i in self.pool if abs(i - self.prev) > 20]
         elif score == "Normal":
@@ -51,11 +63,19 @@ class Solver(object):
 
     def solve(self):
         if self.prev is None:
-            ans = 20
+            if random() > 0.5:
+                ans = 80
+            else:
+                ans = 20
         elif len(self.pool) <= 1:
             ans = self.prev
+        elif self.progress < 5 and [i for i in self.history if i[1] == "Great"]:
+            ans = [i[0] for i in self.history if i[1] == "Great"][-1]
         else:
-            ans = [i for i in self.pool if abs(i - self.pool[0]) <= self.step][-1]
+            if random() > 0.5:
+                ans = [i for i in reversed(self.pool) if abs(i - self.pool[-1]) <= self.step][-1]
+            else:
+                ans = [i for i in self.pool if abs(i - self.pool[0]) <= self.step][-1]
         self.prev = ans
         return self.prev
 
@@ -80,18 +100,19 @@ class Solver(object):
 
 def end_this_time():
     time.sleep(2)
-    api.SendKeys.key_press(96)
-    time.sleep(5)
-    api.SendKeys.key_press(27, 500)
-    time.sleep(1)
-    api.SendKeys.key_press(110, 100)
+    api.SendKeys.key_press(KEY_CONFIRM)  # confirm
+    time.sleep(3)
+    # api.SendKeys.key_press(500, 100)  # esc
+    for i in range(3):
+        api.SendKeys.key_press(KEY_CANCEL, 100)  # cancel
+        time.sleep(0.5)
 
 
 def continue_game():
     time.sleep(5)
-    api.SendKeys.key_press(100)
+    api.SendKeys.key_press(KEY_LEFT)  # left
     time.sleep(0.5)
-    api.SendKeys.key_press(96)
+    api.SendKeys.key_press(KEY_CONFIRM)  # confirm
 
 
 def felling_limb(status):
@@ -101,22 +122,36 @@ def felling_limb(status):
     elif status != "Felling":
         wait = 1.85
     time.sleep(wait)
-    api.SendKeys.key_press(96)
-    api.SendKeys.key_press(96)
-    api.SendKeys.key_press(96)
-    api.SendKeys.key_press(96)
-    api.SendKeys.key_press(96)
+    for i in range(5):
+        api.SendKeys.key_press(KEY_CONFIRM)  # confirm
+        time.sleep(0.2)
+
+
+def find_nearest_tree():
+    nearest = [None, ]
+    nearest_dis = 9999
+    me_pos = api.XivMemory.actor_table.get_me().pos
+
+    def check(a):
+        dis = math.sqrt((a.pos.x - me_pos.x) ** 2 + (a.pos.y - me_pos.y) ** 2 + (a.pos.z - me_pos.z) ** 2)
+        if dis > nearest_dis:
+            nearest[0] = a
+
+    for i, a1, a2 in api.XivMemory.actor_table.get_item():
+        check(a1)
+        if a2 is not None:
+            check(a2)
+    return nearest[0]
 
 
 def start_new_game():
-    time.sleep(2)
-    api.SendKeys.key_press(96)
-    time.sleep(1.5)
-    api.SendKeys.key_press(96)
-    time.sleep(1.5)
-    api.SendKeys.key_press(104)
-    time.sleep(0.5)
-    api.SendKeys.key_press(96)
+    api.XivMemory.targets.set_current(find_nearest_tree())
+    time.sleep(1)
+    api.SendKeys.key_press(KEY_CONFIRM)  # confirm
+    api.SendKeys.key_press(KEY_CONFIRM)  # confirm
+    time.sleep(1)
+    api.SendKeys.key_press(KEY_UP)  # confirm
+    api.SendKeys.key_press(KEY_CONFIRM)  # confirm
 
 
 class CutTheTree(PluginBase):
@@ -124,11 +159,19 @@ class CutTheTree(PluginBase):
 
     def __init__(self):
         super().__init__()
+
+        global KEY_UP,KEY_CONFIRM,KEY_CANCEL,KEY_LEFT
+        KEY_UP = self.storage.data.setdefault("KEY_UP",104)
+        KEY_CONFIRM = self.storage.data.setdefault("KEY_CONFIRM",96)
+        KEY_CANCEL = self.storage.data.setdefault("KEY_CANCEL",110)
+        KEY_LEFT = self.storage.data.setdefault("KEY_LEFT",100)
+        self.storage.save()
+
         self.solver = Solver()
+
         self.register_event('network/recv_789', self.recv_work)
         self.register_event('network/send_843', self.send_work)
         api.XivNetwork.register_makeup(843, self.makeup_data)
-        self.logger("reloaded")
 
     def _onunload(self):
         api.XivNetwork.unregister_makeup(843, self.makeup_data)
@@ -137,7 +180,7 @@ class CutTheTree(PluginBase):
         data = recv_packet.from_buffer(event.raw_msg)
         res = data.cut_result.value()
         if res is not None:
-            self.solver.score(res)
+            self.solver.score(res, data.progress_result)
         self.logger.debug(data)
         if data.round == 1:
             if self.solver.time_check(data.round):
