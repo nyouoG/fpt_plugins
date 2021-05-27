@@ -245,11 +245,11 @@ class CutTheTree(PluginBase):
         key = data.game_state.value()
         if key == "Difficulty choice" or key == "Start Next Round":
             self.solver.reset()
-            if self.enable_hackkkkkk:
-                self.hack()
         if key == "Start Next Round":
             # 选择继续花费的时间
             self.solver.start_time += 4.5
+            if self.enable_hackkkkkk:
+                self.hack()
         elif key == "Felling":
             self.backup = data
         if self.enable:
