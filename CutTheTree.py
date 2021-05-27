@@ -194,13 +194,13 @@ class CutTheTree(PluginBase):
             elif args[0] == 'off':
                 self.enable = False
             elif args[0] == 'hack':
-                self.enable_hackkkkkk=not self.enable_hackkkkkk
+                self.enable_hackkkkkk = not self.enable_hackkkkkk
             else:
                 api.Magic.echo_msg("unknown args: %s" % args[0])
         else:
             self.enable = not self.enable
-        msg="CutTheTree: [%s]" % ('enable' if self.enable else 'disable')
-        if self.enable_hackkkkkk:msg+="[Hackkkkkkkkkkk]"
+        msg = "CutTheTree: [%s]" % ('enable' if self.enable else 'disable')
+        if self.enable_hackkkkkk: msg += "[Hackkkkkkkkkkk]"
         api.Magic.echo_msg(msg)
 
     def _onunload(self):
@@ -215,7 +215,7 @@ class CutTheTree(PluginBase):
             self.solver.score(res, data.progress_result)
             if data.progress_result and self.enable_hackkkkkk:
                 self.backup.param = self.solver.solve()
-                api.XivNetwork.send_messages([(843,bytearray(self.backup))])
+                api.XivNetwork.send_messages([(843, bytearray(self.backup))])
         if data.round == 1 and self.enable:
             if self.solver.time_check(data.round):
                 self.logger("Go to Next One, Current Profit:" + str(data.current_profit))
@@ -234,6 +234,11 @@ class CutTheTree(PluginBase):
         self.logger.debug(msg)
 
         key = data.game_state.value()
+        if key == "Start Game" or key == "Start Next Round":
+            self.solver.reset()
+            if self.enable_hackkkkkk and self.backup is not None:
+                self.backup.param = self.solver.solve()
+                api.XivNetwork.send_messages([(843, bytearray(self.backup))])
         if key == "Start Next Round":
             # 选择继续花费的时间
             self.solver.start_time += 4.5
@@ -250,9 +255,7 @@ class CutTheTree(PluginBase):
     def makeup_data(self, header, raw):
         data = send_packet.from_buffer(raw)
         key = data.game_state.value()
-        if key == "Start Game" or key == "Start Next Round":
-            self.solver.reset()
-        elif key == "Difficulty choice":
+        if key == "Difficulty choice":
             data.param = 2
             self.solver.start_time_reset()
         elif key == "Felling":
