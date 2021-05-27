@@ -45,6 +45,7 @@ class Solver(object):
         self.history = list()
         self.step = 10
         self.progress = 10
+        self.count = 0
 
         self.start_time = 0
         self.time_left = 0
@@ -56,6 +57,7 @@ class Solver(object):
         self.history = list()
         self.step = 10
         self.progress = 10
+        self.count = 0
 
     def score(self, score, progress):
         self.progress = progress
@@ -72,6 +74,8 @@ class Solver(object):
             self.pool = [self.prev]
 
     def solve(self):
+        self.count += 1
+        if self.count >= 9: return
         if self.prev is None:
             if random() > 0.5:
                 ans = 80
@@ -206,6 +210,12 @@ class CutTheTree(PluginBase):
     def _onunload(self):
         api.XivNetwork.unregister_makeup(843, self.makeup_data)
         api.command.unregister(command)
+    def hack(self):
+        if self.backup is not None:
+            ans=self.solver.solve()
+            if ans is None:return
+            self.backup.param = ans
+            api.XivNetwork.send_messages([(843, bytearray(self.backup))])
 
     def recv_work(self, event):
         data = recv_packet.from_buffer(event.raw_msg)
@@ -214,8 +224,7 @@ class CutTheTree(PluginBase):
             self.logger.debug(f"Felling >> {res} ({10 - data.progress_result}/10)")
             self.solver.score(res, data.progress_result)
             if data.progress_result and self.enable_hackkkkkk:
-                self.backup.param = self.solver.solve()
-                api.XivNetwork.send_messages([(843, bytearray(self.backup))])
+                self.hack()
         if data.round == 1 and self.enable:
             if self.solver.time_check(data.round):
                 self.logger("Go to Next One, Current Profit:" + str(data.current_profit))
@@ -234,11 +243,10 @@ class CutTheTree(PluginBase):
         self.logger.debug(msg)
 
         key = data.game_state.value()
-        if key == "Start Game" or key == "Start Next Round":
+        if key == "Difficulty choice" or key == "Start Next Round":
             self.solver.reset()
-            if self.enable_hackkkkkk and self.backup is not None:
-                self.backup.param = self.solver.solve()
-                api.XivNetwork.send_messages([(843, bytearray(self.backup))])
+            if self.enable_hackkkkkk:
+                self.hack()
         if key == "Start Next Round":
             # 选择继续花费的时间
             self.solver.start_time += 4.5
