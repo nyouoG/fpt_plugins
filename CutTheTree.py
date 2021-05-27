@@ -4,21 +4,30 @@ from FFxivPythonTrigger import *
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct, EnumStruct
 import time
 import math
+
 command = "@CTT"
 
 recv_packet = OffsetStruct({
-    'cut_result': (EnumStruct(c_ubyte, {0x0: "Fail", 0x1: "Normal", 0x2: "Great", 0x3: "Perfect"}), 44),
-    'progress_result': (c_ubyte, 48),
-    'round': (c_ubyte, 60),
-    'current_profit': (c_ushort, 68),
-    'future_profit': (c_ushort, 72),
+    'cut_result': (EnumStruct(c_ubyte, {
+        0x0: "Fail",
+        0x1: "Normal",
+        0x2: "Great",
+        0x3: "Perfect"
+    }), 12),
+    'progress_result': (c_ubyte, 16),
+    'round': (c_ubyte, 28),
+    'current_profit': (c_ushort, 36),
+    'future_profit': (c_ushort, 40),
 })
 send_packet = OffsetStruct({
-    'game_state': (
-        EnumStruct(c_ubyte, {0x07: "Start Game", 0x09: "Difficulty choice", 0x0A: "Felling", 0x0B: "Start Next Round"}),
-        38),
-    'param': (c_ubyte, 40)
-})
+    'game_state': (EnumStruct(c_ubyte, {
+        0x07: "Start Game",
+        0x09: "Difficulty choice",
+        0x0A: "Felling",
+        0x0B: "Start Next Round"
+    }), 6),
+    'param': (c_ubyte, 8)
+}, 16)
 
 MAX = 101
 NPC_Name = "孤树无援"
@@ -161,12 +170,14 @@ class CutTheTree(PluginBase):
     def __init__(self):
         super().__init__()
         self.enable = False
+        self.enable_hackkkkkk = False
+        self.backup = None
 
-        global KEY_UP,KEY_CONFIRM,KEY_CANCEL,KEY_LEFT
-        KEY_UP = self.storage.data.setdefault("KEY_UP",104)
-        KEY_CONFIRM = self.storage.data.setdefault("KEY_CONFIRM",96)
-        KEY_CANCEL = self.storage.data.setdefault("KEY_CANCEL",110)
-        KEY_LEFT = self.storage.data.setdefault("KEY_LEFT",100)
+        global KEY_UP, KEY_CONFIRM, KEY_CANCEL, KEY_LEFT
+        KEY_UP = self.storage.data.setdefault("KEY_UP", 104)
+        KEY_CONFIRM = self.storage.data.setdefault("KEY_CONFIRM", 96)
+        KEY_CANCEL = self.storage.data.setdefault("KEY_CANCEL", 110)
+        KEY_LEFT = self.storage.data.setdefault("KEY_LEFT", 100)
         self.storage.save()
 
         self.solver = Solver()
@@ -174,7 +185,7 @@ class CutTheTree(PluginBase):
         self.register_event('network/recv_789', self.recv_work)
         self.register_event('network/send_843', self.send_work)
         api.XivNetwork.register_makeup(843, self.makeup_data)
-        api.command.register(command,self.process_command)
+        api.command.register(command, self.process_command)
 
     def process_command(self, args):
         if args:
@@ -182,11 +193,15 @@ class CutTheTree(PluginBase):
                 self.enable = True
             elif args[0] == 'off':
                 self.enable = False
+            elif args[0] == 'hack':
+                self.enable_hackkkkkk=not self.enable_hackkkkkk
             else:
                 api.Magic.echo_msg("unknown args: %s" % args[0])
         else:
             self.enable = not self.enable
-        api.Magic.echo_msg("CutTheTree: [%s]" % ('enable' if self.enable else 'disable'))
+        msg="CutTheTree: [%s]" % ('enable' if self.enable else 'disable')
+        if self.enable_hackkkkkk:msg+="[Hackkkkkkkkkkk]"
+        api.Magic.echo_msg(msg)
 
     def _onunload(self):
         api.XivNetwork.unregister_makeup(843, self.makeup_data)
@@ -196,8 +211,11 @@ class CutTheTree(PluginBase):
         data = recv_packet.from_buffer(event.raw_msg)
         res = data.cut_result.value()
         if res is not None:
+            self.logger.debug(f"Felling >> {res} ({10 - data.progress_result}/10)")
             self.solver.score(res, data.progress_result)
-        self.logger.debug(data)
+            if data.progress_result and self.enable_hackkkkkk:
+                self.backup.param = self.solver.solve()
+                api.XivNetwork.send_messages([(843,bytearray(self.backup))])
         if data.round == 1 and self.enable:
             if self.solver.time_check(data.round):
                 self.logger("Go to Next One, Current Profit:" + str(data.current_profit))
@@ -210,11 +228,17 @@ class CutTheTree(PluginBase):
 
     def send_work(self, event):
         data = send_packet.from_buffer(event.raw_msg)
-        self.logger.debug(data)
+        msg = data.game_state.value()
+        if msg == "Felling" or msg == "Difficulty choice": msg = f"{msg} << {data.param}"
+
+        self.logger.debug(msg)
+
         key = data.game_state.value()
         if key == "Start Next Round":
             # 选择继续花费的时间
             self.solver.start_time += 4.5
+        elif key == "Felling":
+            self.backup = data
         if self.enable:
             felling_limb(key)
             if self.solver.time_check(key) is False:
@@ -223,7 +247,7 @@ class CutTheTree(PluginBase):
                 start_new_game()
         pass
 
-    def makeup_data(self, raw):
+    def makeup_data(self, header, raw):
         data = send_packet.from_buffer(raw)
         key = data.game_state.value()
         if key == "Start Game" or key == "Start Next Round":
@@ -233,4 +257,4 @@ class CutTheTree(PluginBase):
             self.solver.start_time_reset()
         elif key == "Felling":
             data.param = self.solver.solve()
-        return bytearray(data)
+        return header, bytearray(data)
