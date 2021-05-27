@@ -67,7 +67,7 @@ function
   
     [set]:          set current coordinates
                     format: /e @tp set [x:float] [y:float] [z:float]
-    
+  
     [list]:         list saved coordinates in current zone
   
     [save]:         save coordinates with a name
@@ -76,10 +76,10 @@ function
     [drop]:         drop a saved coordinates
   
                     format: /e @tp drop [name:str]
-    
+  
     [goto]:         goto a saved coordinates with 15 meters limit
                     format: /e @tp goto [name:str]
-    
+  
     [force-goto]:   goto a saved coordinates with no distance limit
                     format: /e @tp force-goto [name:str]
 
@@ -108,3 +108,9 @@ need Teleporter
 ## XivCombat
 
 @aCombat [on/off] [s/m]
+
+## CutTheTree
+
+金蝶砍树，概率炸游戏，不负责售后
+
+@CTT
