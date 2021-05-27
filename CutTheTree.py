@@ -1,16 +1,19 @@
 from ctypes import *
 from FFxivPythonTrigger import *
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct, EnumStruct
+import time
 
 recv_packet = OffsetStruct({
     'cut_result': (EnumStruct(c_ubyte, {0x0: "Fail", 0x1: "Normal", 0x2: "Great", 0x3: "Perfect"}), 44),
     'progress_result': (c_ubyte, 48),
     'round': (c_ubyte, 60),
-    'current_profit': (c_ubyte, 68),
-    'future_profit': (c_ubyte, 72),
+    'current_profit': (c_ushort, 68),
+    'future_profit': (c_ushort, 72),
 })
 send_packet = OffsetStruct({
-    'game_state': (EnumStruct(c_ubyte, {0x07: "Start Game", 0x09: "Difficulty choice", 0x0A: "Felling", 0x0B: "Start Next Round"}), 38),
+    'game_state': (
+        EnumStruct(c_ubyte, {0x07: "Start Game", 0x09: "Difficulty choice", 0x0A: "Felling", 0x0B: "Start Next Round"}),
+        38),
     'param': (c_ubyte, 40)
 })
 MAX = 101
@@ -22,6 +25,10 @@ class Solver(object):
         self.prev = None
         self.history = list()
         self.step = 20
+
+        self.start_time = 0
+        self.time_left = 0
+        self.round_times = 0
 
     def reset(self):
         self.pool = list(range(MAX))
@@ -52,6 +59,65 @@ class Solver(object):
         self.prev = ans
         return self.prev
 
+    def start_time_reset(self):
+        self.start_time = time.time() + 1.5
+
+    def time_check(self, round_status):
+        self.time_left = 60 - (time.time() - self.start_time)
+        if round_status == "Start Next Round":
+            # send
+            if self.time_left < 2:
+                return False
+        elif round_status == 1:
+            # recv
+            self.round_times += 1
+            if self.time_left < 16 or self.round_times >= 6:
+                self.start_time = 0
+                self.round_times = 0
+                return False
+        return True
+
+
+def end_this_time():
+    time.sleep(2)
+    api.SendKeys.key_press(96)
+    time.sleep(5)
+    api.SendKeys.key_press(27, 500)
+    time.sleep(1)
+    api.SendKeys.key_press(110, 100)
+
+
+def continue_game():
+    time.sleep(5)
+    api.SendKeys.key_press(100)
+    time.sleep(0.5)
+    api.SendKeys.key_press(96)
+
+
+def felling_limb(status):
+    wait = 3
+    if status == "Start Next Round":
+        wait = 0.2
+    elif status != "Felling":
+        wait = 1.85
+    time.sleep(wait)
+    api.SendKeys.key_press(96)
+    api.SendKeys.key_press(96)
+    api.SendKeys.key_press(96)
+    api.SendKeys.key_press(96)
+    api.SendKeys.key_press(96)
+
+
+def start_new_game():
+    time.sleep(2)
+    api.SendKeys.key_press(96)
+    time.sleep(1.5)
+    api.SendKeys.key_press(96)
+    time.sleep(1.5)
+    api.SendKeys.key_press(104)
+    time.sleep(0.5)
+    api.SendKeys.key_press(96)
+
 
 class CutTheTree(PluginBase):
     name = "CutTheTree"
@@ -72,11 +138,29 @@ class CutTheTree(PluginBase):
         res = data.cut_result.value()
         if res is not None:
             self.solver.score(res)
-        self.logger(data)
+        self.logger.debug(data)
+        if data.round == 1:
+            if self.solver.time_check(data.round):
+                self.logger("Go to Next One, Current Profit:" + str(data.current_profit))
+                continue_game()
+            else:
+                self.logger("Game End, Get Profit:{}, Time Left:{}"
+                            .format(str(data.current_profit), self.solver.time_left))
+                end_this_time()
+                start_new_game()
 
     def send_work(self, event):
         data = send_packet.from_buffer(event.raw_msg)
-        self.logger(data)
+        self.logger.debug(data)
+        key = data.game_state.value()
+        if key == "Start Next Round":
+            # 选择继续花费的时间
+            self.solver.start_time += 4.5
+        felling_limb(key)
+        if self.solver.time_check(key) is False:
+            self.logger("Too African")
+            time.sleep(3)
+            start_new_game()
         pass
 
     def makeup_data(self, raw):
@@ -86,6 +170,7 @@ class CutTheTree(PluginBase):
             self.solver.reset()
         elif key == "Difficulty choice":
             data.param = 2
+            self.solver.start_time_reset()
         elif key == "Felling":
             data.param = self.solver.solve()
         return bytearray(data)
