@@ -88,6 +88,10 @@ class LogicData(object):
                 return False
         return True
 
+    def hack_cd(self, action_id):
+        r = api.XivMemory.combat_data.cool_down_group[action_sheet[action_id]['CooldownGroup']]
+        r.duration = r.total
+
     def skill_cd(self, action_id: int):
         if action_id not in self.skill_cd_cache:
             row = action_sheet[action_id]

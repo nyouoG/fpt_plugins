@@ -190,7 +190,7 @@ class CutTheTree(PluginBase):
 
     def _onunload(self):
         api.XivNetwork.unregister_makeup(843, self.makeup_data)
-        api.command.unregister(command,self.process_command)
+        api.command.unregister(command)
 
     def recv_work(self, event):
         data = recv_packet.from_buffer(event.raw_msg)

@@ -31,9 +31,16 @@ def get_ability(data: LogicData):
     if not data.is_violent: return
     if data.gauge.battery >= 90:
         return 2864
-    if not (data[16498] and data[hsid]) and not data[2876]: return 2876
+    if not data[2876]:
+        if data[16498] < data.gcd:
+            data.hack_cd(16498)
+            return 2876
+        elif data[hsid] < data.gcd:
+            data.hack_cd(hsid)
+            return 2876
     can_over = not data.gauge.overheatMilliseconds and data[16498] > 8 and data[hsid] > 8 and data.combo_remain > 11 and data.gauge.heat >= 50
-    if can_over and not data[2878]: return 2878
+    if can_over and not data[2878]:
+        return 2878
     if can_over and data[2878] > 8:
         if ability_cnt and data.gcd > 1:
             return
