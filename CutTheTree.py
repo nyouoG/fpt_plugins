@@ -4,6 +4,7 @@ from FFxivPythonTrigger import *
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct, EnumStruct
 import time
 import math
+command = "@CTT"
 
 recv_packet = OffsetStruct({
     'cut_result': (EnumStruct(c_ubyte, {0x0: "Fail", 0x1: "Normal", 0x2: "Great", 0x3: "Perfect"}), 44),
@@ -159,6 +160,7 @@ class CutTheTree(PluginBase):
 
     def __init__(self):
         super().__init__()
+        self.enable = False
 
         global KEY_UP,KEY_CONFIRM,KEY_CANCEL,KEY_LEFT
         KEY_UP = self.storage.data.setdefault("KEY_UP",104)
@@ -172,9 +174,23 @@ class CutTheTree(PluginBase):
         self.register_event('network/recv_789', self.recv_work)
         self.register_event('network/send_843', self.send_work)
         api.XivNetwork.register_makeup(843, self.makeup_data)
+        api.command.register(command,self.process_command)
+
+    def process_command(self, args):
+        if args:
+            if args[0] == 'on':
+                self.enable = True
+            elif args[0] == 'off':
+                self.enable = False
+            else:
+                api.Magic.echo_msg("unknown args: %s" % args[0])
+        else:
+            self.enable = not self.enable
+        api.Magic.echo_msg("CutTheTree: [%s]" % ('enable' if self.enable else 'disable'))
 
     def _onunload(self):
         api.XivNetwork.unregister_makeup(843, self.makeup_data)
+        api.command.unregister(command,self.process_command)
 
     def recv_work(self, event):
         data = recv_packet.from_buffer(event.raw_msg)
@@ -182,7 +198,7 @@ class CutTheTree(PluginBase):
         if res is not None:
             self.solver.score(res, data.progress_result)
         self.logger.debug(data)
-        if data.round == 1:
+        if data.round == 1 and self.enable:
             if self.solver.time_check(data.round):
                 self.logger("Go to Next One, Current Profit:" + str(data.current_profit))
                 continue_game()
@@ -199,11 +215,12 @@ class CutTheTree(PluginBase):
         if key == "Start Next Round":
             # 选择继续花费的时间
             self.solver.start_time += 4.5
-        felling_limb(key)
-        if self.solver.time_check(key) is False:
-            self.logger("Too African")
-            time.sleep(3)
-            start_new_game()
+        if self.enable:
+            felling_limb(key)
+            if self.solver.time_check(key) is False:
+                self.logger("Too African")
+                time.sleep(3)
+                start_new_game()
         pass
 
     def makeup_data(self, raw):
