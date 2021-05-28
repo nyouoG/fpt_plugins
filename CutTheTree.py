@@ -113,7 +113,8 @@ class CutTheTree(PluginBase):
     def send_fell(self):
         if self.backup_fell is not None:
             ans = self.solver.solve()
-            if ans is None: return
+            if ans is None:
+                return
             self.backup_fell.param = ans
             self.send(self.backup_fell)
 
@@ -134,7 +135,8 @@ class CutTheTree(PluginBase):
     def send_work(self, event):
         data = send_packet.from_buffer(event.raw_msg)
         msg = data.game_state.value()
-        if msg == "Felling" or msg == "Difficulty choice": msg = f"{msg} << {data.param}"
+        if msg == "Felling" or msg == "Difficulty choice":
+            msg = f"{msg} << {data.param}"
         self.logger.debug(msg)
         key = data.game_state.value()
         if key == "Difficulty choice" or key == "Start Next Round":

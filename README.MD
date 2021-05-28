@@ -114,3 +114,16 @@ need Teleporter
 金蝶砍树，概率炸游戏，不负责售后
 
 @CTT
+
+
+## CutTheTree
+
+金蝶砍树，概率炸游戏，不负责售后
+
+@CTT [on/off/hack]
+
+```
+    [on] 启动自动砍
+    [off] 关闭自动砍
+    [hack] 自动发包，可以先on再hack，估计会掉线，建议别用了
+```
