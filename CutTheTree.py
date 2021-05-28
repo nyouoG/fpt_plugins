@@ -176,6 +176,7 @@ class CutTheTree(PluginBase):
         self.enable = False
         self.enable_hackkkkkk = False
         self.backup = None
+        self.backup2 = None
 
         global KEY_UP, KEY_CONFIRM, KEY_CANCEL, KEY_LEFT
         KEY_UP = self.storage.data.setdefault("KEY_UP", 104)
@@ -210,10 +211,11 @@ class CutTheTree(PluginBase):
     def _onunload(self):
         api.XivNetwork.unregister_makeup(843, self.makeup_data)
         api.command.unregister(command)
+
     def hack(self):
         if self.backup is not None:
-            ans=self.solver.solve()
-            if ans is None:return
+            ans = self.solver.solve()
+            if ans is None: return
             self.backup.param = ans
             api.XivNetwork.send_messages([(843, bytearray(self.backup))])
 
@@ -223,8 +225,11 @@ class CutTheTree(PluginBase):
         if res is not None:
             self.logger.debug(f"Felling >> {res} ({10 - data.progress_result}/10)")
             self.solver.score(res, data.progress_result)
-            if data.progress_result and self.enable_hackkkkkk:
-                self.hack()
+            if self.enable_hackkkkkk:
+                if data.progress_result:
+                    self.hack()
+                elif data.future_profit:
+                    api.XivNetwork.send_messages([(843, bytearray(self.backup2))])
         if data.round == 1 and self.enable:
             if self.solver.time_check(data.round):
                 self.logger("Go to Next One, Current Profit:" + str(data.current_profit))
@@ -248,6 +253,7 @@ class CutTheTree(PluginBase):
         if key == "Start Next Round":
             # 选择继续花费的时间
             self.solver.start_time += 4.5
+            self.backup2 = data
             if self.enable_hackkkkkk:
                 self.hack()
         elif key == "Felling":
