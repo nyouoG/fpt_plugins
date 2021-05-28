@@ -143,6 +143,9 @@ class CutTheTree(PluginBase):
             self.backup_next = data
             if self.enable:
                 self.send_fell()
+        elif key == "Difficulty choice":
+            if self.enable:
+                self.send_fell()
         elif key == "Felling":
             self.backup_fell = data
 
@@ -152,7 +155,7 @@ class CutTheTree(PluginBase):
         if key == "Difficulty choice":
             data.param = 2
         elif key == "Felling":
-            ans=self.solver.solve()
+            ans = self.solver.solve()
             if ans is not None:
                 data.param = ans
         return header, bytearray(data)
