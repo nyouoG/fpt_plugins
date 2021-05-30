@@ -3,7 +3,6 @@ from random import random
 from FFxivPythonTrigger import *
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct, EnumStruct
 import time
-import math
 
 command = "@CTTA"
 
@@ -30,12 +29,31 @@ send_packet = OffsetStruct({
 }, 16)
 
 MAX = 101
-NPC_Name = "孤树无援"
 
 KEY_CONFIRM = 96
 KEY_CANCEL = 110
 KEY_LEFT = 100
 KEY_UP = 104
+
+import math
+
+NPC_Name = "孤树无援"
+
+
+def dis(a, b):
+    return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
+
+
+def find_nearest_tree():
+    nearest = None
+    nearest_dis = 9999
+    me_pos = api.XivMemory.actor_table.get_me().pos
+    for a1 in api.XivMemory.actor_table.get_actors_by_name(NPC_Name):
+        dis1 = dis(me_pos, a1.pos)
+        if dis1 < nearest_dis:
+            nearest = a1
+            nearest_dis = dis1
+    return nearest
 
 
 class Solver(object):
@@ -118,6 +136,7 @@ class Solver(object):
                 return False
         return True
 
+
 # 动画锁？反正是个锁，防止多次触发动作的
 key_progress = False
 
@@ -131,7 +150,7 @@ def end_this_time():
     time.sleep(3)
     api.SendKeys.key_press(KEY_CONFIRM)  # confirm
     time.sleep(3)
-    # api.SendKeys.key_press(500, 100)  # esc
+    api.SendKeys.key_press(500, 100)  # esc
     for i in range(3):
         api.SendKeys.key_press(KEY_CANCEL, 100)  # cancel
         time.sleep(0.5)
@@ -165,31 +184,7 @@ def felling_limb(status, enable_hackkkkkk, last_hit):
         time.sleep(0.2)
 
 
-def find_nearest_tree():
-    nearest = [None, ]
-    nearest_dis = 9999
-    me_pos = api.XivMemory.actor_table.get_me().pos
 
-    def check(a):
-        dis = math.sqrt((a.pos.x - me_pos.x) ** 2 + (a.pos.y - me_pos.y) ** 2 + (a.pos.z - me_pos.z) ** 2)
-        if dis > nearest_dis:
-            nearest[0] = a
-
-    for i, a1, a2 in api.XivMemory.actor_table.get_item():
-        check(a1)
-        if a2 is not None:
-            check(a2)
-    return nearest[0]
-
-
-def start_new_game():
-    api.XivMemory.targets.set_current(find_nearest_tree())
-    time.sleep(1)
-    api.SendKeys.key_press(KEY_CONFIRM)  # confirm
-    api.SendKeys.key_press(KEY_CONFIRM)  # confirm
-    time.sleep(1)
-    api.SendKeys.key_press(KEY_UP)  # confirm
-    api.SendKeys.key_press(KEY_CONFIRM)  # confirm
 
 
 class CutTheTree(PluginBase):
@@ -245,6 +240,18 @@ class CutTheTree(PluginBase):
             self.backup.param = ans
             api.XivNetwork.send_messages([(843, bytearray(self.backup))])
 
+    def start_new_game(self):
+        target = find_nearest_tree()
+        if target is not None:
+            api.XivMemory.targets.set_current(target)
+            api.SendKeys.key_press(KEY_CONFIRM)  # confirm
+            api.SendKeys.key_press(KEY_CONFIRM)  # confirm
+            time.sleep(1)
+            api.SendKeys.key_press(KEY_UP)  # confirm
+            api.SendKeys.key_press(KEY_CONFIRM)  # confirm
+        else:
+            self.logger("no tree found")
+
     def recv_work(self, event):
         data = recv_packet.from_buffer(event.raw_msg)
         res = data.cut_result.value()
@@ -266,7 +273,7 @@ class CutTheTree(PluginBase):
                 self.logger("Game End, Get Profit:{}, Time Left:{}"
                             .format(str(data.current_profit), self.solver.time_left))
                 end_this_time()
-                start_new_game()
+                self.start_new_game()
 
     def send_work(self, event):
         data = send_packet.from_buffer(event.raw_msg)
@@ -294,7 +301,7 @@ class CutTheTree(PluginBase):
             if self.solver.time_check(key) is False and self.enable_hackkkkkk is False:
                 self.logger("Too African")
                 time.sleep(3)
-                start_new_game()
+                self.start_new_game()
         pass
 
     def makeup_data(self, header, raw):
