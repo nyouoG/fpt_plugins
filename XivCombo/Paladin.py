@@ -46,7 +46,7 @@ def single(me):
     combo_id = api.XivMemory.combat_data.combo_state.action_id
     if combo_id == 9 and lv >= 4:
         return 15
-    if combo_id == 15:
+    if combo_id == 15 and lv >= 26:
         target = api.XivMemory.targets.current
         if lv >= 54 and target is not None:
             t_effect = target.effects.get_dict(source=me.id)

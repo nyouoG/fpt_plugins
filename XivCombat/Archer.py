@@ -24,11 +24,14 @@ from .LogicData import LogicData
 
 def archer_logic(data: LogicData):
     lv = data.me.level
+    is_single = data.is_single(12)
     if data.gcd > 1:
         if data.nAbility:
             return data.nAbility
-        if not data[101]:
+        if data.is_violent and not data[101]:
             return 101
+        if not data[110]:
+            return 110
     elif data.gcd < 0.3:
         if data.nSkill:
             return data.nSkill
@@ -36,15 +39,15 @@ def archer_logic(data: LogicData):
             return 98
         poison, wind = (124, 129) if lv < 64 else (1200, 1201)
         t_effects = data.target.effects.get_dict()
-        need_poison = poison not in t_effects or t_effects[poison].timer < 2.5
-        need_wind = wind not in t_effects or t_effects[wind].timer < 2.5
+        need_poison = (poison not in t_effects or t_effects[poison].timer < 2.5) and data.time_to_kill_target > 10
+        need_wind = (wind not in t_effects or t_effects[wind].timer < 2.5) and data.time_to_kill_target > 10
         if need_poison:
             return 100
         if lv >= 30 and need_wind:
             return 113
         # if lv > 56 and (need_wind or need_poison) and poison in t_effects and wind in t_effects:
         #     return 3560
-        return 97
+        return 106 if not is_single and lv >=18 else 97
 
 
 fight_strategies = {5: archer_logic}

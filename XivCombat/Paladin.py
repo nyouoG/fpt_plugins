@@ -48,8 +48,9 @@ def paladin_logic(data: LogicData):
         if data.nAbility:
             return data.nAbility
         if data.is_violent:
-            if data[29]:return 29
-            if data[23]:return 23
+            if not data[20]:return 20
+            if not data[29]:return 29
+            if not data[23]:return 23
     elif data.gcd < 0.2:
         if data.target.effectiveDistanceX > 5:
             return 24 if not data.combo_id and data.me.level >= 15 else None
@@ -64,7 +65,7 @@ def paladin_logic(data: LogicData):
             return
         if data.combo_id == 9 and data.me.level >= 4:
             return 15
-        if data.combo_id == 15:
+        if data.combo_id == 15 and data.me.level >= 26:
             if data.me.level >= 54:
                 t_effect = data.target.effects.get_dict(source=data.me.id)
                 if 725 not in t_effect or t_effect[725].timer < 5:
