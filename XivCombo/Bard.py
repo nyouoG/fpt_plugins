@@ -54,7 +54,7 @@ def dot(me):
     target = api.XivMemory.targets.current
     if target is None: return 100
     poison, wind = (124, 129) if lv < 64 else (1200, 1201)
-    t_effects = target.effects.get_dict()
+    t_effects = target.effects.get_dict(source=me.id)
     if poison not in t_effects or lv < 30: return 100
     if wind not in t_effects: return 113
     if lv > 56: return 3560
