@@ -58,6 +58,7 @@ class LogicData(object):
 
         self.enemies = list(Utils.query(enemies, key=is_actor_status_can_damage))
         self.enemies.sort(key=lambda enemy: enemy.effectiveDistanceX)
+        self.enemies_dict = {e.id: e for e in self.enemies}
 
         if self.target is None:
             if self.enemies and config.get('find'):
@@ -66,16 +67,26 @@ class LogicData(object):
             else:
                 raise TargetNotExistsException()
 
-        self.job = api.XivMemory.player_info.job
+        self.job = api.XivMemory.player_info.job.value()
         self.combo_id = api.XivMemory.combat_data.combo_state.action_id
         self.combo_remain = api.XivMemory.combat_data.combo_state.remain
         self.gauge = api.XivMemory.player_info.gauge
         self.effects = self.me.effects.get_dict()
         self.gcd = api.XivMemory.combat_data.cool_down_group.gcd_group.remain
         self.gcd_total = api.XivMemory.combat_data.cool_down_group.gcd_group.total
-        self.time_to_kill_target = self.target.currentHP / max(api.CombatMonitor.actor_tdps(self.target.id), 1)
+        self.ttk_cache = dict()
+        self.time_to_kill_target = self.get_ttk(self.target.id)
         self.is_violent = config.get('violent') and self.time_to_kill_target > 5
         self.skill_cd_cache = dict()
+
+    def get_ttk(self, t_id):
+        if t_id not in self.ttk_cache:
+            t = self.enemies_dict[t_id] if t_id in self.enemies_dict else api.XivMemory.actor_table.get_actor_by_id(t_id)
+            if t is None:
+                self.ttk_cache[t_id] = -1
+            else:
+                self.ttk_cache[t_id] = t.currentHP / max(api.CombatMonitor.actor_tdps(t_id), 1)
+        return self.ttk_cache[t_id]
 
     def is_single(self, dis=None, limit=2):
         if self.config['single']: return True

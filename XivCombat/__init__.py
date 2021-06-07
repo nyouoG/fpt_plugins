@@ -15,7 +15,7 @@ fight_strategies = dict()
 common_strategies = dict()
 is_area_action_cache = dict()
 
-from . import Machinist, Gunbreaker, DarkKnight, Warrior, Dancer, Summoner,Archer,Paladin
+from . import Machinist, Gunbreaker, DarkKnight, Warrior, Dancer, Summoner,Paladin,Bard
 
 fight_strategies |= Machinist.fight_strategies
 fight_strategies |= Gunbreaker.fight_strategies
@@ -23,8 +23,8 @@ fight_strategies |= DarkKnight.fight_strategies
 fight_strategies |= Warrior.fight_strategies
 fight_strategies |= Dancer.fight_strategies
 fight_strategies |= Summoner.fight_strategies
-fight_strategies |= Archer.fight_strategies
 fight_strategies |= Paladin.fight_strategies
+fight_strategies |= Bard.fight_strategies
 
 common_strategies |= Dancer.common_strategies
 

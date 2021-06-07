@@ -90,5 +90,5 @@ def machinist_logic(data: LogicData):
 
 
 fight_strategies = {
-    31: machinist_logic
+    "Machinist": machinist_logic
 }

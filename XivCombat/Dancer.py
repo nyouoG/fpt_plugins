@@ -32,7 +32,7 @@ from .LogicData import LogicData
 
 
 def step_to_skill(step):
-    return 15998 + step if step > 0 else 15999
+    return 15998 + step.raw_value if step.raw_value > 0 else None
 
 
 def dancer_common(data: LogicData):
@@ -111,5 +111,5 @@ def dancer_logic(data: LogicData):
                 return 15993
 
 
-fight_strategies = {38: dancer_logic}
-common_strategies = {38:dancer_common}
+fight_strategies = {"Dancer": dancer_logic}
+common_strategies = {"Dancer":dancer_common}

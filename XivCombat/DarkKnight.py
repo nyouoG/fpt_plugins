@@ -56,4 +56,4 @@ def dark_knight_logic(data: LogicData):
         return 3617 if single else 3621
 
 
-fight_strategies = {32: dark_knight_logic}
+fight_strategies = {"DarkKnight": dark_knight_logic}

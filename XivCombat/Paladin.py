@@ -74,5 +74,5 @@ def paladin_logic(data: LogicData):
         return 9
 
 fight_strategies = {
-    19: paladin_logic
+    'Paladin': paladin_logic
 }

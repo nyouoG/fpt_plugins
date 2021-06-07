@@ -150,4 +150,4 @@ def summoner_logic(data: LogicData):
             return 163 if is_single or lv < 40 else 16511  # r3还是aoe
 
 
-fight_strategies = {27: summoner_logic}
+fight_strategies = {'Summoner': summoner_logic}

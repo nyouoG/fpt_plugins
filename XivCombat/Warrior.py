@@ -41,4 +41,4 @@ def warrior_logic(data: LogicData):
                 return 41
 
 
-fight_strategies = {21: warrior_logic}
+fight_strategies = {'Warrior': warrior_logic}

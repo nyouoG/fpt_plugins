@@ -85,4 +85,4 @@ def gunbreaker_logic(data: LogicData):
                 return 16141
 
 
-fight_strategies = {37: gunbreaker_logic}
+fight_strategies = {"Gunbreaker": gunbreaker_logic}
