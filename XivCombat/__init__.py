@@ -88,14 +88,14 @@ class XivCombat(PluginBase):
         for t_id, effects in evt.targets.items():
             is_invincible = False
             for effect in effects:
-                if 'Invincible' in effect.tags:
+                if 'invincible' in effect.tags or ('ability' in effect and effect.param == 0):
                     is_invincible = True
                     break
             if is_invincible and t_id not in LogicData.invincible_actor:
-                # self.logger(f"{hex(t_id)} is add as an invincible actor")
+                self.logger.debug(f"{hex(t_id)} is add as an invincible actor")
                 LogicData.invincible_actor.add(t_id)
             if not is_invincible and t_id in LogicData.invincible_actor:
-                # self.logger(f"{hex(t_id)} is remove as an invincible actor")
+                self.logger.debug(f"{hex(t_id)} is remove as an invincible actor")
                 LogicData.invincible_actor.remove(t_id)
 
     def _onunload(self):
