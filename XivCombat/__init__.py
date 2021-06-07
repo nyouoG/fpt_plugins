@@ -15,7 +15,7 @@ fight_strategies = dict()
 common_strategies = dict()
 is_area_action_cache = dict()
 
-from . import Machinist, Gunbreaker, DarkKnight, Warrior, Dancer, Summoner,Paladin,Bard
+from . import Machinist, Gunbreaker, DarkKnight, Warrior, Dancer, Summoner, Paladin, Bard
 
 fight_strategies |= Machinist.fight_strategies
 fight_strategies |= Gunbreaker.fight_strategies
@@ -75,11 +75,28 @@ class XivCombat(PluginBase):
         self.nAbility = [None, 0]
         self.nSkill = [None, 0]
         api.command.register(command, self.process_command)
+        self.register_event("network/action_effect", self.deal_network_action)
         frame_inject.register_continue_call(self.action)
         self.next_work_time = 0
         self.count_error = 0
 
         api.Magic.echo_msg(self.get_status_string())
+
+    def deal_network_action(self, evt):
+        if evt.source_id != api.XivMemory.actor_table.get_me().id or evt.action_type != 'action':
+            return
+        for t_id, effects in evt.targets.items():
+            is_invincible = False
+            for effect in effects:
+                if 'Invincible' in effect.tags:
+                    is_invincible = True
+                    break
+            if is_invincible and t_id not in LogicData.invincible_actor:
+                # self.logger(f"{hex(t_id)} is add as an invincible actor")
+                LogicData.invincible_actor.add(t_id)
+            if not is_invincible and t_id in LogicData.invincible_actor:
+                # self.logger(f"{hex(t_id)} is remove as an invincible actor")
+                LogicData.invincible_actor.remove(t_id)
 
     def _onunload(self):
         self.work = False
@@ -117,7 +134,7 @@ class XivCombat(PluginBase):
                                     self.nAbility = [None, 0]
                                 use_skill(action, target)
                                 raise ContinueException()
-                if self.nSkill[0] is not None and api.XivMemory.combat_data.cool_down_group.gcd_group.remain<0.2:
+                if self.nSkill[0] is not None and api.XivMemory.combat_data.cool_down_group.gcd_group.remain < 0.2:
                     use_skill(*self.nSkill[0])
                     self.nSkill = [None, 0]
                 elif self.nAbility[0] is not None:

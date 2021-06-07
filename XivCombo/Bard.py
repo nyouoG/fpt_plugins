@@ -58,7 +58,7 @@ def dot(me):
     if poison not in t_effects or lv < 30: return 100
     if wind not in t_effects: return 113
     if lv > 56: return 3560
-    return 100 if t_effects[poison].timer < t_effects[wind] else 113
+    return 100 if t_effects[poison].timer < t_effects[wind].timer else 113
 
 
 combos = {

@@ -5,7 +5,7 @@ action_sheet = SaintCoinach.realm.game_data.get_sheet('Action')
 # action_sheet = lumina.lumina.GetExcelSheet[Action]()
 
 invincible_effects = {325, 394, 529, 656, 671, 775, 776, 895, 969, 981, 1570, 1697, 1829, }
-
+invincible_actor = set()
 
 class NoMeActorException(Exception):
     pass
@@ -24,6 +24,8 @@ class ActorDeadException(Exception):
 
 
 def is_actor_status_can_damage(actor):
+    if actor.id in invincible_actor:
+        return False
     for eid, _ in actor.effects.get_items():
         if eid in invincible_effects:
             return False
