@@ -88,7 +88,7 @@ class XivCombat(PluginBase):
         for t_id, effects in evt.targets.items():
             is_invincible = False
             for effect in effects:
-                if 'invincible' in effect.tags or ('ability' in effect and effect.param == 0):
+                if 'invincible' in effect.tags or ('ability' in effect.tags and effect.param == 0):
                     is_invincible = True
                     break
             if is_invincible and t_id not in LogicData.invincible_actor:
