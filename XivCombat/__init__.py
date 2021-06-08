@@ -119,6 +119,8 @@ class XivCombat(PluginBase):
                         pass
                     except LogicData.TargetIsSelfException:
                         pass
+                    except LogicData.NoValidEnemyException:
+                        raise ContinueException()
                     else:
                         if not (round_data.me.CastingID):
                             ans = None

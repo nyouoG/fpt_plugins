@@ -7,6 +7,7 @@ action_sheet = SaintCoinach.realm.game_data.get_sheet('Action')
 invincible_effects = {325, 394, 529, 656, 671, 775, 776, 895, 969, 981, 1570, 1697, 1829, }
 invincible_actor = set()
 
+
 class NoMeActorException(Exception):
     pass
 
@@ -16,6 +17,10 @@ class TargetIsSelfException(Exception):
 
 
 class TargetNotExistsException(Exception):
+    pass
+
+
+class NoValidEnemyException(Exception):
     pass
 
 
@@ -59,6 +64,8 @@ class LogicData(object):
         enemies = api.XivMemory.actor_table.get_actors_by_id(*[enemy.id for enemy in enemies])
 
         self.enemies = list(Utils.query(enemies, key=is_actor_status_can_damage))
+        if not self.enemies: raise NoValidEnemyException()
+
         self.enemies.sort(key=lambda enemy: enemy.effectiveDistanceX)
         self.enemies_dict = {e.id: e for e in self.enemies}
 
