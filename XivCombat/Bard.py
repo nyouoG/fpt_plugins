@@ -118,15 +118,15 @@ def bard_logic(data: LogicData):
         return
     lv = data.me.level
     is_single = data.is_single(12)
-    poison, wind = (124, 129) if lv < 64 else (1200, 1201)
     song = data.gauge.songType.value()
     if data.gcd > 1:
         if data.nAbility:
             return data.nAbility
         if data.is_violent:
             global LAST_SONG
-            if not data[101]: return 101
+            if not data[101] and 122 not in data.effects: return 101
             if not data[107]: return 107
+            poison, wind = (124, 129) if lv < 64 else (1200, 1201)
             t_effects = data.target.effects.get_dict(source=data.me.id)
             need_poison = (poison not in t_effects or t_effects[poison].timer < 2.5) and data.time_to_kill_target > 10
             need_wind = (wind not in t_effects or t_effects[wind].timer < 2.5) and data.time_to_kill_target > 10
