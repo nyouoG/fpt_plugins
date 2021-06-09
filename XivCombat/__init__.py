@@ -135,6 +135,7 @@ class XivCombat(PluginBase):
                                 elif (action, target) == self.nAbility[0]:
                                     self.nAbility = [None, 0]
                                 use_skill(action, target)
+                                next_period = 0.4
                                 raise ContinueException()
                 if self.nSkill[0] is not None and api.XivMemory.combat_data.cool_down_group.gcd_group.remain < 0.2:
                     use_skill(*self.nSkill[0])

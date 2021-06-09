@@ -38,6 +38,7 @@ from .LogicData import LogicData
 16496,绝峰箭,80
 """
 """
+125,猛者强击
 122,直线射击预备
 129,风蚀箭
 1201,狂风蚀箭
@@ -74,15 +75,19 @@ def archer_logic(data: LogicData):
         #     return 3560
         return 106 if not is_single and lv >= 18 else 97
 
+
 LAST_SONG = perf_counter()
+ability_cnt = 0
+
 
 def bard_dots(data: LogicData):
     lv = data.me.level
     song = data.gauge.songType.value()
     poison, wind = (124, 129) if lv < 64 else (1200, 1201)
+    t = data.gcd_total * 2 if 125 not in data.effects or data.effects[125].timer > 7 else 15
     t_effects = data.target.effects.get_dict(source=data.me.id)
-    need_poison = (poison not in t_effects or t_effects[poison].timer < 2.5) and data.time_to_kill_target > 10
-    need_wind = (wind not in t_effects or t_effects[wind].timer < 2.5) and data.time_to_kill_target > 10
+    need_poison = (poison not in t_effects or t_effects[poison].timer < t) and data.time_to_kill_target > 10
+    need_wind = (wind not in t_effects or t_effects[wind].timer < t) and data.time_to_kill_target > 10
     if lv > 56 and (need_wind or need_poison) and poison in t_effects and wind in t_effects: return 3560
     if need_poison: return 100
     if lv >= 30 and need_wind: return 113
@@ -97,10 +102,9 @@ def bard_dots(data: LogicData):
     for e in data.enemies:
         if e.id == data.target.id or e.effectiveDistanceX > 24: continue
         t_effects = e.effects.get_dict(source=data.me.id)
-        need_wind = (wind not in t_effects or t_effects[wind].timer < 2.5)
-        need_poison = (poison not in t_effects or t_effects[poison].timer < 2.5)
-        if not (need_wind and need_poison):
-            cnt += 1
+        need_wind = (wind not in t_effects or t_effects[wind].timer < t)
+        need_poison = (poison not in t_effects or t_effects[poison].timer < t)
+        if not (need_wind and need_poison): cnt += 1
         if cnt > cnt_cut:
             return
         need_wind = need_wind and data.get_ttk(e.id) > 10
@@ -113,53 +117,74 @@ def bard_dots(data: LogicData):
             return 113, e.id
 
 
-def bard_logic(data: LogicData):
-    if data.target.effectiveDistanceX > 24:
-        return
+def get_ability(data: LogicData):
     lv = data.me.level
     is_single = data.is_single(12)
     song = data.gauge.songType.value()
-    if data.gcd > 1:
-        if data.nAbility:
-            return data.nAbility
-        if data.is_violent:
-            global LAST_SONG
-            if not data[101] and 122 not in data.effects: return 101
-            if not data[107]: return 107
-            poison, wind = (124, 129) if lv < 64 else (1200, 1201)
-            t_effects = data.target.effects.get_dict(source=data.me.id)
-            need_poison = (poison not in t_effects or t_effects[poison].timer < 2.5) and data.time_to_kill_target > 10
-            need_wind = (wind not in t_effects or t_effects[wind].timer < 2.5) and data.time_to_kill_target > 10
-            if not data[3562] and not (need_poison or need_wind): return 16494 if not is_single and lv >= 72 else 3562
-            is_p= song == "paeon" and data.gauge.songProcs > 3
-            if perf_counter()-LAST_SONG>3:
-                if is_single:
-                    if not data[3559] and (not song or is_p):
-                        LAST_SONG = perf_counter()
-                        return 3559
-                    if not data[114] and (not song or is_p):
-                        LAST_SONG = perf_counter()
-                        return 114
-                else:
-                    if not data[114] and (not song or is_p):
-                        LAST_SONG = perf_counter()
-                        return 114
-                    if not data[3559] and (not song or is_p):
-                        LAST_SONG = perf_counter()
-                        return 3559
-                if not data[116] and not song:
-                        LAST_SONG = perf_counter()
-                        return 116
-        if song == "minuet" and data.gauge.songProcs > (2 if data.gauge.songMilliseconds > 2000 else 0): return 7404
-        if not data[110]: return 117 if not is_single and lv >= 45 else 110
-        if not data[3558] and (lv < 68 or song): return 3558
-    elif data.gcd < 0.3:
-        if data.nSkill: return data.nSkill
-        if 122 in data.effects: return 98
-        if data.gauge.soulGauge > 90: return 16496
-        use_dot = bard_dots(data)
-        if use_dot: return use_dot
-        return 106 if not is_single and lv >= 18 else 97
+    if data.is_violent:
+        global LAST_SONG
+        poison, wind = (124, 129) if lv < 64 else (1200, 1201)
+        t_effects = data.target.effects.get_dict(source=data.me.id)
+        need_poison = (poison not in t_effects or t_effects[poison].timer < data.gcd_total) and data.time_to_kill_target > 10
+        need_wind = (wind not in t_effects or t_effects[wind].timer < data.gcd_total) and data.time_to_kill_target > 10
+        full_dot = not (need_poison or need_wind)
+        if not data[101] and full_dot:
+            if ability_cnt and data.gcd > 1.5:
+                return
+            elif data.gcd <= 1.5:
+                return 101
+        if not data[118] and data[101] > 10 and song: return 118
+        if not data[107] and full_dot and 122 not in data.effects and 125 in data.effects: return 107
+        if not data[3562] and full_dot: return 16494 if not is_single and lv >= 72 else 3562
+        song_end = not song or data.gauge.songMilliseconds < data.gcd
+        is_p = song == "paeon" and data.gauge.songProcs > 3 and max([data[3559], data[114]]) <= 30
+        if perf_counter() - LAST_SONG > 3:
+            if is_single:
+                if not data[3559] and (song_end or is_p):
+                    LAST_SONG = perf_counter()
+                    return 3559
+                if not data[114] and (song_end or is_p):
+                    LAST_SONG = perf_counter()
+                    return 114
+            else:
+                if not data[114] and (song_end or is_p):
+                    LAST_SONG = perf_counter()
+                    return 114
+                if not data[3559] and (song_end or is_p):
+                    LAST_SONG = perf_counter()
+                    return 3559
+            if not data[116] and song_end:
+                LAST_SONG = perf_counter()
+                return 116
+    if song == "minuet" and data.gauge.songProcs > (2 if data.gauge.songMilliseconds > data.gcd_total * 1000 else 0): return 7404
+    if not data[110]: return 117 if not is_single and lv >= 45 else 110
+    if not data[3558] and (lv < 68 or song): return 3558
+
+
+def get_skill(data: LogicData):
+    lv = data.me.level
+    is_single = data.is_single(12)
+    if data.nSkill: return data.nSkill
+    if 122 in data.effects: return 98
+    use_dot = bard_dots(data)
+    if type(use_dot) != int and data.gauge.soulGauge >= 90: return 16496
+    if use_dot is not None: return use_dot
+    return 106 if not is_single and lv >= 18 else 97
+
+
+def bard_logic(data: LogicData):
+    global ability_cnt
+    if data.target.effectiveDistanceX > 24: return
+    if data.gcd > 0.7 and ability_cnt < int(data.gcd_total):
+        rtn = get_ability(data) if not data.nAbility else data.nAbility
+        if rtn is not None:
+            ability_cnt += 1
+            return rtn
+    elif data.gcd < 0.2:
+        rtn = get_skill(data) if not data.nSkill else data.nSkill
+        if rtn is not None:
+            ability_cnt = 0
+            return rtn
 
 
 fight_strategies = {
