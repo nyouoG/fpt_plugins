@@ -83,9 +83,10 @@ class XivCombat(PluginBase):
         api.Magic.echo_msg(self.get_status_string())
 
     def deal_network_action(self, evt):
-        if evt.source_id != api.XivMemory.actor_table.get_me().id or evt.action_type != 'action':
+        if evt.action_type != 'action':
             return
         for t_id, effects in evt.targets.items():
+            if t_id<0x40000000:continue
             is_invincible = False
             for effect in effects:
                 if 'invincible' in effect.tags or ('ability' in effect.tags and effect.param == 0):
@@ -96,7 +97,10 @@ class XivCombat(PluginBase):
                 LogicData.invincible_actor.add(t_id)
             if not is_invincible and t_id in LogicData.invincible_actor:
                 self.logger.debug(f"{hex(t_id)} is remove as an invincible actor")
-                LogicData.invincible_actor.remove(t_id)
+                try:
+                    LogicData.invincible_actor.remove(t_id)
+                except KeyError:
+                    pass
 
     def _onunload(self):
         self.work = False
