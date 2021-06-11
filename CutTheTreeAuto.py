@@ -6,6 +6,12 @@ import time
 
 command = "@CTTA"
 
+recv_opcode = 0x360  # cn5.45
+send_opcode = 0x39d  # cn5.45
+
+# recv_opcode = 789  # cn5.41
+# send_opcode = 843  # cn5.41
+
 recv_packet = OffsetStruct({
     'cut_result': (EnumStruct(c_ubyte, {
         0x0: "Fail",
@@ -206,9 +212,9 @@ class CutTheTree(PluginBase):
 
         self.solver = Solver()
 
-        self.register_event('network/recv_789', self.recv_work)
-        self.register_event('network/send_843', self.send_work)
-        api.XivNetwork.register_makeup(843, self.makeup_data)
+        self.register_event(f'network/recv_{recv_opcode}', self.recv_work)
+        self.register_event(f'network/send_{send_opcode}', self.send_work)
+        api.XivNetwork.register_makeup(send_opcode, self.makeup_data)
         api.command.register(command, self.process_command)
 
     def process_command(self, args):
@@ -229,7 +235,7 @@ class CutTheTree(PluginBase):
         api.Magic.echo_msg(msg)
 
     def _onunload(self):
-        api.XivNetwork.unregister_makeup(843, self.makeup_data)
+        api.XivNetwork.unregister_makeup(send_opcode, self.makeup_data)
         api.command.unregister(command)
 
     def hack(self):
@@ -238,7 +244,7 @@ class CutTheTree(PluginBase):
             if ans is None:
                 return
             self.backup.param = ans
-            api.XivNetwork.send_messages([(843, bytearray(self.backup))])
+            api.XivNetwork.send_messages([(send_opcode, bytearray(self.backup))])
 
     def start_new_game(self):
         target = find_nearest_tree()
