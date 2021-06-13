@@ -59,6 +59,10 @@ class XivCombo(PluginBase):
         self.storage.save()
         self.on_get_icon_hook = OnGetIconHook(get_icon_addr)
         self.on_is_icon_replaceable_hook = OnCheckIsIconReplaceableHook(is_icon_replaceable_addr)
+
+    def _start(self):
+        self.on_get_icon_hook.install()
+        self.on_is_icon_replaceable_hook.install()
         self.on_get_icon_hook.enable()
         self.on_is_icon_replaceable_hook.enable()
 

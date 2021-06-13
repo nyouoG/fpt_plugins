@@ -58,6 +58,7 @@ class PosLocker(PluginBase):
         api.Magic.echo_msg("pl: [%s]" % ('enable' if self._enable else 'disable'))
 
     def _start(self):
+        self.hook.install()
         self.hook.enable()
 
     def _onunload(self):

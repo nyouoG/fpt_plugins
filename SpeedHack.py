@@ -43,9 +43,13 @@ class SpeedHack(PluginBase):
         self.storage.save()
         self.hook_main = SpeedHookMain(addrMain)
         self.hook_fly = SpeedHookFly(addrFly)
+        api.command.register(command, self.process_command)
+
+    def _start(self):
+        self.hook_main.install()
+        self.hook_fly.install()
         self.hook_main.enable()
         self.hook_fly.enable()
-        api.command.register(command, self.process_command)
 
     def _onunload(self):
         self.hook_main.uninstall()
