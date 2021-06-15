@@ -15,7 +15,8 @@ invincible_actor = set()
 
 
 def is_actor_status_can_damage(actor):
-    if actor.id in invincible_actor: return False
+    if actor.id in invincible_actor or not actor.can_select:
+        return False
     for eid, _ in actor.effects.get_items():
         if eid in invincible_effects:
             return False
@@ -38,7 +39,7 @@ class LogicData(object):
     def target(self):
         for method in self.config.target:
             t = self.get_target(method)
-            if t is not None: return t
+            if t is not None and is_actor_status_can_damage(t): return t
 
     @lru_cache
     def get_target(self, method: str):

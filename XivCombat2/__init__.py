@@ -125,6 +125,7 @@ class XivCombat2(PluginBase):
         self.is_working = False
         self.work_lock = Lock()
         api.command.register(command, self.process_command)
+        self.register_event("network/action_effect", self.deal_network_action)
 
         # frame_inject.register_continue_call(self.process)
 
@@ -225,6 +226,26 @@ class XivCombat2(PluginBase):
 
     def status_str(self):
         return str(self.config.get_dict())
+
+    def deal_network_action(self, evt):
+        if evt.source_id != Api.get_me_actor().id or evt.action_type != 'action':
+            return
+        for t_id, effects in evt.targets.items():
+            if t_id < 0x40000000: continue
+            is_invincible = False
+            for effect in effects:
+                if 'invincible' in effect.tags or ('ability' in effect.tags and effect.param == 0):
+                    is_invincible = True
+                    break
+            if is_invincible and t_id not in LogicData.invincible_actor:
+                self.logger.debug(f"{hex(t_id)} is add as an invincible actor")
+                LogicData.invincible_actor.add(t_id)
+            if not is_invincible and t_id in LogicData.invincible_actor:
+                self.logger.debug(f"{hex(t_id)} is remove as an invincible actor")
+                try:
+                    LogicData.invincible_actor.remove(t_id)
+                except KeyError:
+                    pass
 
     def _process_command(self, args):
         if not args:

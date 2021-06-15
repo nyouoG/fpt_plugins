@@ -110,7 +110,7 @@ def bard_dots(data: LogicData):
         if cnt > cnt_cut:
             return
         need_wind = need_wind and data.ttk(e.id) > 10
-        need_poison = need_poison and data.ttk(e.id) > 20
+        need_poison = need_poison and data.ttk(e.id) > 30
         if lv > 56 and (need_wind or need_poison) and poison in t_effects and wind in t_effects:
             return 3560, e.id
         if need_poison:
