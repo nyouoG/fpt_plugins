@@ -104,8 +104,7 @@ class XivCombat2(PluginBase):
                         return 1
                 except Exception:
                     self.logger.error("error in hotbar hook", format_exc())
-                finally:
-                    return _self.original(a1, block_p)
+                return _self.original(a1, block_p)
 
         self.config = Config.CombatConfig(
             **self.storage.data.setdefault('config', {
