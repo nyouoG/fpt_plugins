@@ -135,8 +135,7 @@ class XivCombat(PluginBase):
         self.work = False
         api.command.unregister(command)
         frame_inject.unregister_continue_call(self.action)
-        if self.force_action_hook.is_installed:
-            self.force_action_hook.uninstall()
+        self.force_action_hook.uninstall()
 
     def action(self):
         if self.work and perf_counter() > self.next_work_time and not api.XivMemory.combat_data.skill_queue.mark1:

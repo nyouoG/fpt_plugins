@@ -186,16 +186,15 @@ class XivCombat2(PluginBase):
         if data.gcd < 0.2: self.config.ability_cnt = 0
         process_non_gcd = data.gcd > 0.7 and self.config.ability_cnt < int(data.gcd_total) or data.gcd == 0
         strategy = self.config.get_strategy(data.job)
-        if strategy is not None:
+        if strategy is not None and (not strategy.fight_only or data.valid_enemies):
             self.is_working = True
-            if not strategy.fight_only or data.valid_enemies:
-                to_use = strategy.common(data)
-                if to_use is None:
-                    if data.gcd < 0.2:
-                        to_use = strategy.global_cool_down_ability(data)
-                    if to_use is None and process_non_gcd:
-                        to_use = strategy.non_global_cool_down_ability(data)
-                        if to_use is not None: self.config.ability_cnt += 1
+            to_use = strategy.common(data)
+            if to_use is None:
+                if data.gcd < 0.2:
+                    to_use = strategy.global_cool_down_ability(data)
+                if to_use is None and process_non_gcd:
+                    to_use = strategy.non_global_cool_down_ability(data)
+                    if to_use is not None: self.config.ability_cnt += 1
         else:
             self.is_working = False
         if to_use is None:
