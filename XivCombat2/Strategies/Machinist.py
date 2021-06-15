@@ -2,7 +2,7 @@ from math import radians
 
 from FFxivPythonTrigger.Utils import sector
 from ..Strategy import *
-from .. import Api, Define
+from .. import Define
 
 """
 2866：分裂弹
