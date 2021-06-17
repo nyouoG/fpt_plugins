@@ -78,6 +78,18 @@ class LogicData(object):
         return min(self.valid_enemies, key=lambda x: x.currentHP / x.maxHp)
 
     @cached_property
+    def valid_party(self):
+        return [member.actor for member in Api.get_party_list() if member.id and member.actor.can_select]
+
+    @cached_property
+    def valid_alliance(self):
+        return [member.actor for member in Api.get_party_list(alliance_all=True) if member.id and member.actor.can_select]
+
+    @cached_property
+    def valid_players(self):
+        return [player for player in Api.get_players() if player.can_select]
+
+    @cached_property
     def valid_enemies(self):
         enemies = Utils.query(Api.get_enemies_iter(), key=lambda x: x.can_select)
         enemies = Api.get_actors_by_id(*[enemy.id for enemy in enemies])

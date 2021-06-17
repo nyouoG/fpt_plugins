@@ -1,5 +1,6 @@
 from FFxivPythonTrigger import api
 from FFxivPythonTrigger.AttrContainer import AttributeNotFoundException
+from FFxivPythonTrigger.Utils import query
 
 
 def get_me_actor():
@@ -112,5 +113,16 @@ def get_backpack_item_count(item_id: int, is_hq: bool = None):
         if is_hq is None or item.is_hq == is_hq: cnt += item.count
     return cnt
 
+
 def get_movement_speed():
     return api.XivMemory.movement.speed
+
+
+def get_party_list(alliance_all=False):
+    if alliance_all:
+        return api.XivMemory.party.alliance
+    return api.XivMemory.party.main_party
+
+
+def get_players():
+    return query(api.XivMemory.actor_table.get_item(), lambda actor: actor.type == 1)

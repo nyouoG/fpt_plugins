@@ -112,14 +112,33 @@ class SummonerLogic(Strategy):
         summon_enkindle_use = data.gauge.ReturnSummon and not data[7429]  # 是否可以使用迸发 —— 好了就用
         aether_use = data[16508] <= data.gauge.aetherflowStacks * 2.4  # 是否需要泄以太
 
-        return res, summon_type, need_dot1, need_dot2, d3, enkindle_use, summon_enkindle_use, aether_use
+        swift_res_target = None
+        k = data.config.custom_settings.setdefault('swift_res', 'none')
+        if k == 'party':
+            d = data.valid_party
+        elif k == 'alliance':
+            d = data.valid_alliance
+        elif k == 'all':
+            d = data.valid_players
+        else:
+            d = list()
+        for member in d:
+            if not member.currentHp and 148 not in member.effects.get_dict() and member.effectiveDistanceX < 30:
+                swift_res_target = member
+                break
+
+        return res, summon_type, need_dot1, need_dot2, d3, enkindle_use, summon_enkindle_use, aether_use, swift_res_target
 
     def global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         if data.config.query_skill:  # 队列技能
             return data.config.get_query_skill()
-        res, summon_type, need_dot1, need_dot2, d3, enkindle_use, summon_enkindle_use, aether_use = self.summoner_init(data)
+        res, summon_type, need_dot1, need_dot2, d3, enkindle_use, summon_enkindle_use, aether_use, swift_res_target = self.summoner_init(data)
+
+        if 167 in data.effects and swift_res_target is not None:
+            return UseAbility(173, swift_res_target.id)
+
         if min(data[3580], data[3581]) > 5:  # 三灾cd中补毒相关
-            if not data.is_moving and need_dot2 and self.last_d2 + 3 < perf_counter():
+            if (not data.is_moving or 167 in data.effects) and need_dot2 and self.last_d2 + 3 < perf_counter():
                 self.last_d2 = perf_counter()
                 return UseAbility(168)  # 读条毒，需要防止对方buff未刷新而重复读
             if need_dot1:
@@ -136,6 +155,7 @@ class SummonerLogic(Strategy):
 
         need_speed = data.is_moving or aether_use or ea_use or d3
         need_speed = need_speed or enkindle_use or summon_enkindle_use or bahamut_last_gcd or (not data[3581] and res)
+        need_speed = 167 not in data.effects and need_speed
 
         if need_speed and (summon_type != 1 or ea_use):  # 巴哈附体期间如果需要泄灵攻依然打灵攻
             if r4 < 4 and not data.gauge.ReturnSummon and min(data[16512], data[16509]) <= 30:
@@ -148,7 +168,9 @@ class SummonerLogic(Strategy):
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         if data.config.query_ability:
             return data.config.get_query_ability()
-        res, summon_type, need_dot1, need_dot2, d3, enkindle_use, summon_enkindle_use, aether_use = self.summoner_init(data)
+        res, summon_type, need_dot1, need_dot2, d3, enkindle_use, summon_enkindle_use, aether_use, swift_res_target = self.summoner_init(data)
+        if swift_res_target is not None and not data[7561]:
+            return UseAbility(7561)
         should_summon = self.last_ea < perf_counter()  # 判断上次灵攻时间，防止卡掉技能
         if not data[7423] and res:
             if summon_type == 1 and data.gauge.stanceMilliseconds < 6000 or enkindle_use or summon_type == 2 or summon_type == 4 and data[3581] < 6:
