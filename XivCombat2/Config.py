@@ -46,7 +46,9 @@ class CombatConfig(object):
                  resource: int = 0,
                  single: int = 0,
                  target: list[str] = None,
-                 pairing: dict[Union[str, int], str] = None):
+                 pairing: dict[Union[str, int], str] = None,
+                 custom_settings: dict[str, any] = None,
+                 ):
         self.enable = enable
         self.resource = resource
         self.single = single
@@ -54,6 +56,7 @@ class CombatConfig(object):
         self._pairing = dict()
         self.pair_lock = Lock()
         self.target = target if target is not None else []
+        self.custom_settings: dict[str, any] = custom_settings if custom_settings is not None else dict()
 
         # some data for processing
         self.ability_cnt = 0
@@ -62,7 +65,6 @@ class CombatConfig(object):
         self.query_skill = None
         self.query_ability = None
         self.skill_disable: set[int] = set()
-        self.custom_settings: dict[str, any] = dict()
 
     def get_query_ability(self):
         temp = self.query_ability
@@ -80,7 +82,8 @@ class CombatConfig(object):
             'resource': self.resource,
             'single': self.single,
             'pairing': self.pairing,
-            'target': self.target
+            'target': self.target,
+            'custom_settings':self.custom_settings,
         }
 
     def load_logic(self, module_name: str):

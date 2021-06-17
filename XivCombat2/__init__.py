@@ -13,7 +13,7 @@ from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 from . import Config, Api, LogicData, Strategy, Define
 
 ERR_LIMIT = 20
-DEFAULT_PERIOD = 0.1
+DEFAULT_PERIOD = 0.2
 command = "@aCombat"
 action_sheet = realm.game_data.get_sheet('Action')
 is_area_action_cache = dict()
@@ -54,6 +54,7 @@ def use_item(to_use: Strategy.UseItem):
 
 
 def use_ability(to_use: Strategy.UseAbility):
+    if to_use.ability_id is None: return
     if to_use.ability_id not in is_area_action_cache:
         is_area_action_cache[to_use.ability_id] = action_sheet[to_use.ability_id]['TargetArea']
     if is_area_action_cache[to_use.ability_id]:
@@ -108,10 +109,6 @@ class XivCombat2(PluginBase):
 
         self.config = Config.CombatConfig(
             **self.storage.data.setdefault('config', {
-                'enable': False,
-                'resource': 0,
-                'single': 0,
-                'pairing': dict(),
                 'target': ["focus", "current", "list_distance"],
             })
         )
@@ -213,6 +210,7 @@ class XivCombat2(PluginBase):
                 target = data.target
                 to_use.target_id = data.me.id if target is None else target.id
             if isinstance(to_use, Strategy.UseAbility) and Api.skill_queue_is_empty():
+                # self.logger(action_sheet[to_use.ability_id]['Name'])
                 use_ability(to_use)
             elif isinstance(to_use, Strategy.UseItem):  # 使用道具，应该只有食物或者爆发药吧？
                 use_item(to_use)
@@ -308,6 +306,9 @@ class XivCombat2(PluginBase):
             else:
                 return f"unknown args: [{args[2]}]"
             return f"{'enable' if a else 'disable'} {action_sheet[s]['Name']}"
+        elif args[0] == "set":
+            self.config.custom_settings[args[1]] = ' '.join(args[2:])
+            return self.config.custom_settings
         else:
             return f"unknown args: [{args[0]}]"
 

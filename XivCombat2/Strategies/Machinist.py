@@ -47,7 +47,7 @@ def res_lv(data: LogicData) -> int:
         return 1
     elif data.config.resource == Define.RESOURCE_STINGY:
         return 0
-    return int(data.max_ttk > 5)
+    return int(1e+10>data.max_ttk > 5)
 
 
 class MachinistLogic(Strategy):

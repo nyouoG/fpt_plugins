@@ -149,15 +149,16 @@ class BardLogic(Strategy):
             need_wind = (wind not in t_effects or t_effects[wind].timer < data.gcd_total) and data.time_to_kill_target > 10
             full_dot = not (need_poison or need_wind)
             if not data[101] and full_dot:
-                if data.config.ability_cnt and data.gcd > 1.5:
+                if data.config.ability_cnt and data.gcd > 1:
                     return
-                elif data.gcd <= 1.5:
+                elif data.gcd <= 1:
                     return UseAbility(101)
             if not data[118] and data[101] > 10 and song: return UseAbility(118)
             if not data[107] and full_dot and 122 not in data.effects and 125 in data.effects: return UseAbility(107)
             if not data[3562] and full_dot: return UseAbility(16494 if not is_single(data, 1) and lv >= 72 else 3562)
             song_end = not song or data.gauge.songMilliseconds < data.gcd
             is_p = song == "paeon" and data.gauge.songProcs > 3 and max([data[3559], data[114]]) <= 30
+            is_p = is_p and (data.config.custom_settings.setdefault('song_strategy', '80') == '80' or data.gauge.songMilliseconds < data.gcd)
             if perf_counter() - self.last_song > 3:
                 if is_single(data, 3):
                     if not data[3559] and (song_end or is_p):

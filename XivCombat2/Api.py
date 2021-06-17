@@ -111,3 +111,6 @@ def get_backpack_item_count(item_id: int, is_hq: bool = None):
     for item in api.XivMemory.inventory.get_item_in_pages_by_key(item_id, "backpack"):
         if is_hq is None or item.is_hq == is_hq: cnt += item.count
     return cnt
+
+def get_movement_speed():
+    return api.XivMemory.movement.speed

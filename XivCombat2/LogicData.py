@@ -167,3 +167,7 @@ class LogicData(object):
     @lru_cache
     def item_count(self, item_id, is_hq: bool = None):
         return Api.get_backpack_item_count(item_id, is_hq)
+
+    @cached_property
+    def is_moving(self):
+        return bool(Api.get_movement_speed())
