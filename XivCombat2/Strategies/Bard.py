@@ -93,7 +93,7 @@ def bard_dots(data: LogicData):
     if lv > 56 and (need_wind or need_poison) and poison in t_effects and wind in t_effects: return 3560,
     if need_poison: return 100,
     if lv >= 30 and need_wind: return 113,
-    if not song: return
+    if not song or data.config.single == Define.FORCE_SINGLE: return
     cnt = 1
     if song == "paeon":
         cnt_cut = 2
