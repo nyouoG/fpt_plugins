@@ -1,7 +1,5 @@
 from math import radians
-from time import perf_counter
 
-from FFxivPythonTrigger.Logger import info
 from FFxivPythonTrigger.Utils import sector, circle
 from ..Strategy import *
 from .. import Define
@@ -148,7 +146,6 @@ class RDMLogic(Strategy):
         cnt = count_enemy(data, 0)
         if has_swift:  # 有瞬发
             if swift_res_target is not None and data.me.currentMP >= 2400:
-                info('swift_res', swift_res_target.id)
                 return UseAbility(7523, swift_res_target.id)
             if lv >= 15 and cnt > (1 if lv >= 66 else 2):
                 return UseAbility(7509)  # aoe 散碎、冲击
