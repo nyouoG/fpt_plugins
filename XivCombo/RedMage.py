@@ -32,43 +32,42 @@ from FFxivPythonTrigger import api
 7561,即刻咏唱,18
 7562,醒梦,24
 """
+"""
+1234,赤火炎预备
+1235,赤飞石预备
+167,即刻咏唱
+1249,连续咏唱
+"""
 
 
 def single(me):
     lv = me.level
     gauge = api.XivMemory.player_info.gauge
-    white = gauge.white_mana <= gauge.black_mana
+    white = gauge.white_mana < gauge.black_mana
     effects = me.effects.get_dict()
-    if 1249 in effects or 167 in effects:
-        if white and lv >= 10: return 7507
-        return 7505 if lv >= 4 else 7503
+    if 1249 in effects or 167 in effects and lv >= 4:
+        return 7507 if white and lv >= 10 else 7505
     else:
-        if 1234 in effects and 1235 in effects:
-            return 7511 if white else 7510
-        if 1234 in effects:
-            return 7510
-        if 1235 in effects:
-            return 7511
+        if white:
+            if 1234 in effects: return 7510
+            if 1235 in effects: return 7511
+        else:
+            if 1235 in effects: return 7511
+            if 1234 in effects: return 7510
         return 7503
 
 
 def multi(me):
     lv = me.level
-    gauge = api.XivMemory.player_info.gauge
-    white = gauge.white_mana <= gauge.black_mana
     effects = me.effects.get_dict()
-    if 1249 in effects or 167 in effects:
-        return 7509
-    if white and lv >= 22:
-        return 16525
-    else:
-        return 16524 if lv >= 18 else 7509
+    if 1249 in effects or 167 in effects or lv < 18: return 7509
+    gauge = api.XivMemory.player_info.gauge
+    return 16525 if gauge.white_mana <= gauge.black_mana and lv >= 22 else 16524
 
 
 def sword(me):
     lv = me.level
     gauge = api.XivMemory.player_info.gauge
-    white = gauge.white_mana <= gauge.black_mana
     combo_id = api.XivMemory.combat_data.combo_state.action_id
     if combo_id == 7504 and lv >= 35:
         return 7512
@@ -80,7 +79,7 @@ def sword(me):
         if gauge.white_mana == gauge.black_mana:
             if 1234 in effects: return 7526
             if 1235 in effects: return 7525
-        return 7526 if white and lv >= 70 else 7525
+        return 7526 if gauge.white_mana < gauge.black_mana else 7525
     elif (combo_id == 7525 or combo_id == 7526) and lv >= 80:
         return 16530
     else:
