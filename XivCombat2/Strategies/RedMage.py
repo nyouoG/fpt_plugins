@@ -104,7 +104,7 @@ class RDMLogic(Strategy):
         has_swift = 1249 in data.effects or 167 in data.effects
         swift_res_target = search_swift_res(data)
 
-        if data.target is None and swift_res_target is not None and data.me.currentMp >= (2400 if has_swift else 3100):
+        if data.target is None and swift_res_target is not None and data.me.currentMP >= (2400 if has_swift else 3100):
             if has_swift:
                 return UseAbility(7523, swift_res_target.id)
             elif not data.is_moving:
@@ -171,7 +171,7 @@ class RDMLogic(Strategy):
         min_mana = min(data.gauge.white_mana, data.gauge.black_mana)
         if res_lv(data) and data.target.effectiveDistanceX < 25:
             if not data[7521] and 40 <= min_mana <= 50: return UseAbility(7521)  # 倍增
-            if not data[7518] and min_mana < 60: return UseAbility(7518)
+            if not data[7518] and min_mana < 60: return UseAbility(7518)  # 促进
             if not data[7520] and min_mana >= (50 if count_enemy(data, 2) < 3 else 20): return UseAbility(7520)  # 鼓励
             if not data[7517]: return UseAbility(7517)  # 飞刺
             if not data[7519]: return UseAbility(7519)  # 六分
