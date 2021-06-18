@@ -182,7 +182,7 @@ class XivCombat2(PluginBase):
         # 获取决策行为
         to_use = None
         if data.gcd < 0.2: self.config.ability_cnt = 0
-        process_non_gcd = data.gcd > 0.7 and self.config.ability_cnt < int(data.gcd_total) or data.gcd == 0
+        process_non_gcd = data.gcd > 0.9 and self.config.ability_cnt < int(data.gcd_total) or data.gcd == 0
         strategy = self.config.get_strategy(data.job)
         if strategy is not None and (not strategy.fight_only or data.valid_enemies):
             self.is_working = True

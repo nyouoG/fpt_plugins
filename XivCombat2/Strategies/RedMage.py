@@ -1,6 +1,7 @@
 from math import radians
 from time import perf_counter
 
+from FFxivPythonTrigger.Logger import info
 from FFxivPythonTrigger.Utils import sector, circle
 from ..Strategy import *
 from .. import Define
@@ -133,8 +134,13 @@ class RDMLogic(Strategy):
             return UseAbility(16530)
         "处理魔连击结束"
 
-        if (res and data.is_moving and not has_swift or max_mana >= (90 if res else 97) and dis > 15) and min_mana >= 5:
-            return UseAbility(16529)  # 续斩处理溢出魔元、走位
+        if min_mana >= 5:  # 续斩处理溢出魔元、走位
+            if max_mana >= (90 if res else 97) and dis > 10: return UseAbility(16529)
+            if res and data.is_moving and not has_swift:
+                if data.gcd:
+                    return None
+                else:
+                    return UseAbility(16529)  # 续斩处理溢出魔元、走位
 
         if (lv < 2 or res and min_mana >= (80 if lv >= 50 else 55 if lv >= 35 else 30)) and dis < 4:
             return UseAbility(7516)  # 魔回刺、判断是否适合开始魔连击
@@ -142,6 +148,7 @@ class RDMLogic(Strategy):
         cnt = count_enemy(data, 0)
         if has_swift:  # 有瞬发
             if swift_res_target is not None and data.me.currentMP >= 2400:
+                info('swift_res', swift_res_target.id)
                 return UseAbility(7523, swift_res_target.id)
             if lv >= 15 and cnt > (1 if lv >= 66 else 2):
                 return UseAbility(7509)  # aoe 散碎、冲击
@@ -167,6 +174,7 @@ class RDMLogic(Strategy):
         min_mana = min(data.gauge.white_mana, data.gauge.black_mana)
         if res_lv(data) and data.target.effectiveDistanceX < 25:
             if not data[7521] and 40 <= min_mana <= 50: return UseAbility(7521)  # 倍增
+            if not data[7518] and min_mana < 60: return UseAbility(7518)
             if not data[7520] and min_mana >= (50 if count_enemy(data, 2) < 3 else 20): return UseAbility(7520)  # 鼓励
             if not data[7517]: return UseAbility(7517)  # 飞刺
             if not data[7519]: return UseAbility(7519)  # 六分
