@@ -80,11 +80,11 @@ class LogicData(object):
 
     @cached_property
     def valid_party(self):
-        return [member.actor for member in Api.get_party_list() if member.id and member.actor.can_select]
+        return [member.actor for member in Api.get_party_list() if member.actor is not None and member.actor.can_select]
 
     @cached_property
     def valid_alliance(self):
-        return [member.actor for member in Api.get_party_list(alliance_all=True) if member.id and member.actor.can_select]
+        return [member.actor for member in Api.get_party_list(alliance_all=True) if member.actor is not None and member.actor.can_select]
 
     @cached_property
     def valid_players(self):
