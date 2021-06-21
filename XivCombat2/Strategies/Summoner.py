@@ -123,7 +123,7 @@ class SummonerLogic(Strategy):
         else:
             d = list()
         for member in d:
-            if not member.currentHp and 148 not in member.effects.get_dict() and member.effectiveDistanceX < 30:
+            if not member.currentHp and 148 not in member.effects.get_dict() and data.actor_distance_effective(member) < 30:
                 swift_res_target = member
                 break
 

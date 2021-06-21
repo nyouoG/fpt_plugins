@@ -1,5 +1,6 @@
 from math import radians
 
+from FFxivPythonTrigger.Logger import debug
 from FFxivPythonTrigger.Utils import sector, circle
 from ..Strategy import *
 from .. import Define
@@ -57,7 +58,7 @@ def search_swift_res(data: LogicData):
     else:
         d = list()
     for member in d:
-        if not member.currentHP and 148 not in member.effects.get_dict() and member.effectiveDistanceX < 30:
+        if not member.currentHP and 148 not in member.effects.get_dict() and data.actor_distance_effective(member) < 30:
             return member
 
 
@@ -97,7 +98,7 @@ class RDMLogic(Strategy):
         if data.config.query_skill: return data.config.get_query_skill()  # 队列技能
         res = res_lv(data)
         lv = data.me.level
-        dis = data.target.effectiveDistanceX if data.target is not None else 1e+99
+        dis = data.target_distance
         min_mana = min(data.gauge.white_mana, data.gauge.black_mana)
         max_mana = max(data.gauge.white_mana, data.gauge.black_mana)
         use_white = data.gauge.white_mana < data.gauge.black_mana
@@ -134,11 +135,11 @@ class RDMLogic(Strategy):
 
         if min_mana >= 5:  # 续斩处理溢出魔元、走位
             if max_mana >= (90 if res else 97) and dis > 10: return UseAbility(16529)
-            if res and data.is_moving and not has_swift:
-                if data.gcd:
-                    return None
-                else:
-                    return UseAbility(16529)  # 续斩处理溢出魔元、走位
+            # if res and data.is_moving and not has_swift:
+            #     if data.gcd:
+            #         return None
+            #     else:
+            #         return UseAbility(16529)  # 续斩处理溢出魔元、走位
 
         if (lv < 2 or res and min_mana >= (80 if lv >= 50 else 55 if lv >= 35 else 30)) and dis < 4:
             return UseAbility(7516)  # 魔回刺、判断是否适合开始魔连击
@@ -146,6 +147,7 @@ class RDMLogic(Strategy):
         cnt = count_enemy(data, 0)
         if has_swift:  # 有瞬发
             if swift_res_target is not None and data.me.currentMP >= 2400:
+                debug('swift_res',swift_res_target.Name, hex(swift_res_target.id))
                 return UseAbility(7523, swift_res_target.id)
             if lv >= 15 and cnt > (1 if lv >= 66 else 2):
                 return UseAbility(7509)  # aoe 散碎、冲击
@@ -161,15 +163,15 @@ class RDMLogic(Strategy):
                 if 1235 in data.effects: return UseAbility(7511)
                 if 1234 in data.effects: return UseAbility(7510)
             return UseAbility(7503)
-        elif swift_res_target is not None and data.me.currentMP >= 2400 and not data[7561]:
-            return UseAbility(7561)  # 即刻
+        # else:
+        #     return UseAbility(7561)  # 即刻
 
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         if data.config.query_ability: return data.config.get_query_ability()  # 队列技能
 
         if data.target is None or not data.valid_enemies: return
         min_mana = min(data.gauge.white_mana, data.gauge.black_mana)
-        if res_lv(data) and data.target.effectiveDistanceX < 25:
+        if res_lv(data) and data.target_distance:
             if not data[7521] and 40 <= min_mana <= 50: return UseAbility(7521)  # 倍增
             if not data[7518] and min_mana < 60: return UseAbility(7518)  # 促进
             if not data[7520] and min_mana >= (50 if count_enemy(data, 2) < 3 else 20): return UseAbility(7520)  # 鼓励

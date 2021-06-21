@@ -102,7 +102,7 @@ def bard_dots(data: LogicData):
     else:
         return
     for e in data.valid_enemies:
-        if e.id == data.target.id or e.effectiveDistanceX > 24: continue
+        if e.id == data.target.id or data.actor_distance_effective(e) > 24: continue
         t_effects = e.effects.get_dict(source=data.me.id)
         need_wind = (wind not in t_effects or t_effects[wind].timer < t)
         need_poison = (poison not in t_effects or t_effects[poison].timer < t)

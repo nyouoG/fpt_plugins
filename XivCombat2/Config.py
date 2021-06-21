@@ -48,6 +48,9 @@ class CombatConfig(object):
                  target: list[str] = None,
                  pairing: dict[Union[str, int], str] = None,
                  custom_settings: dict[str, any] = None,
+                 enable_extra_enemies=False,
+                 extra_enemies_combat_only=True,
+                 extra_enemies_distance: int = 15,
                  ):
         self.enable = enable
         self.resource = resource
@@ -57,6 +60,9 @@ class CombatConfig(object):
         self.pair_lock = Lock()
         self.target = target if target is not None else []
         self.custom_settings: dict[str, any] = custom_settings if custom_settings is not None else dict()
+        self.enable_extra_enemies = enable_extra_enemies
+        self.extra_enemies_combat_only = extra_enemies_combat_only
+        self.extra_enemies_distance = extra_enemies_distance
 
         # some data for processing
         self.ability_cnt = 0
@@ -83,7 +89,10 @@ class CombatConfig(object):
             'single': self.single,
             'pairing': self.pairing,
             'target': self.target,
-            'custom_settings':self.custom_settings,
+            'custom_settings': self.custom_settings,
+            'enable_extra_enemies': self.enable_extra_enemies,
+            'extra_enemies_combat_only': self.extra_enemies_combat_only,
+            'extra_enemies_distance': self.extra_enemies_distance,
         }
 
     def load_logic(self, module_name: str):

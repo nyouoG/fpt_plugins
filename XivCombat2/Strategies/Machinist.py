@@ -59,12 +59,12 @@ class MachinistLogic(Strategy):
         res_use = res_lv(data)
         if data.config.query_skill:
             return data.config.get_query_skill()
-        if data.target.effectiveDistanceX > 25:
+        if data.target_distance > 25:
             return
         if data[2876] or not res_use:
             if data.gcd >= data[16498]: return UseAbility(16498 if single or data.me.level < 72 else 16498)
             if data.gcd >= data[hsid]: return UseAbility(hsid)
-        if single or data.target.effectiveDistanceX > 12 or data.me.level < 18:
+        if single or data.target_distance > 12 or data.me.level < 18:
             if data.gauge.overheatMilliseconds and data.me.level >= 35:
                 return UseAbility(7410)
             elif data.combo_id == 2866 and data.me.level >= 2:
@@ -81,7 +81,7 @@ class MachinistLogic(Strategy):
         res_use = res_lv(data)
         if data.config.query_ability:
             return data.config.get_query_ability()
-        if data.target.effectiveDistanceX > 25:
+        if data.target_distance > 25:
             return
         if min(data[2874], data[2890]) < 15:
             return UseAbility(2874) if data[2874] <= data[2890] else UseAbility(2890)

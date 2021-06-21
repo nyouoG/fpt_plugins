@@ -84,7 +84,7 @@ class DancerLogic(Strategy):
         if data.config.query_skill:  # 队列技能
             return data.config.get_query_skill()
 
-        if data.target.effectiveDistanceX > 25: return
+        if data.target_distance > 25: return
 
         if (1821 not in data.effects or data.effects[1821].timer < 5) and not data[15997]:
             return UseAbility(15997)  # 没有小舞状态优先小舞
@@ -143,7 +143,7 @@ class DancerLogic(Strategy):
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         if data.config.query_ability:
             return data.config.get_query_ability()
-        if 1818 in data.effects or 1819 in data.effects or data.target.effectiveDistanceX > 25: return
+        if 1818 in data.effects or 1819 in data.effects or data.target_distance > 25: return
         res = res_lv(data)
         if res:
             if data[15998] > 100 and not data[16011]:

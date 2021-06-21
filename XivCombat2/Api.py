@@ -126,3 +126,11 @@ def get_party_list(alliance_all=False):
 
 def get_players():
     return query(api.XivMemory.actor_table.get_item(), lambda actor: actor.type == 1)
+
+
+def get_hostiles():
+    return query(api.XivMemory.actor_table.get_item(), lambda actor: actor.can_select and actor.is_hostile)
+
+
+def get_coordinate():
+    return api.Coordinate()
