@@ -76,8 +76,9 @@ class GunbreakerLogic(Strategy):
             return UseAbility(16149)
         if data.combo_id == 16139 and data.gauge.cartridges < 2 and data.me.level >= 26:
             return UseAbility(16145)
-        if cartridges_full or ((1831 in data.effects or data[16164] < 3 and data[16138] > 10) and data.gauge.cartridges):
-            return UseAbility(16162 if cnt < 3 or data.me.level < 72 else 16163)
+        if data.me.level >= 72 or cnt < 3:
+            if cartridges_full or ((1831 in data.effects or data[16164] < 3 and data[16138] > 10) and data.gauge.cartridges):
+                return UseAbility(16162 if cnt < 3 else 16163)
         if data.combo_id == 16139 and data.me.level >= 26:
             return UseAbility(16145)
         if data.combo_id == 16137 and data.me.level >= 4:
@@ -96,7 +97,10 @@ class GunbreakerLogic(Strategy):
         if data.gcd < 2 and not data[16138] and (data[16164] < 10 or data[16164] > 25):
             if data.combo_id in [16139, 16141 if data.me.level >= 40 else -1]:
                 if max(data[16159], data[16146], data[16153] < 4) and data.gauge.cartridges:
-                    return UseAbility(16138)
+                    if data.config.ability_cnt and data.gcd > 1:
+                        return
+                    elif data.gcd <= 1:
+                        return UseAbility(16138)
         if not data[16164] and data[16138] > 10 and data.combo_id != 16139 and not data.gauge.cartridges:
             return UseAbility(16164)
         if not data[16144] and (data[16138] > 10 or 1831 in data.effects):

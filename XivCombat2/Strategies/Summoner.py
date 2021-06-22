@@ -123,7 +123,7 @@ class SummonerLogic(Strategy):
         else:
             d = list()
         for member in d:
-            if not member.currentHp and 148 not in member.effects.get_dict() and data.actor_distance_effective(member) < 30:
+            if not member.currentHP and 148 not in member.effects.get_dict() and data.actor_distance_effective(member) < 30:
                 swift_res_target = member
                 break
 
@@ -181,7 +181,7 @@ class SummonerLogic(Strategy):
         if data.gauge.bahamutReady and min(data[16512], data[16509]) > 20 and data[184] > 20 and should_summon and res and data.gcd < 2.2:
             if data.config.ability_cnt and data.gcd > 1:
                 return None
-            elif data.gcd < 1:
+            elif data.gcd <= 1:
                 return UseAbility(7427)  # 召唤龙神 灵攻以及宝宝大招cd均在20s往上，判断上次灵攻时间
         if summon_enkindle_use:
             return UseAbility(7429)  # 龙、不死鸟迸发
@@ -189,9 +189,9 @@ class SummonerLogic(Strategy):
             self.last_d2 = perf_counter()
             return UseAbility(3580)  # 三灾
         if not data[3581] and res and (summon_type != 4 or should_summon) and data.gcd < 2.2:
-            if data.config.ability_cnt and data.gcd > 1:
+            if data.config.ability_cnt and data.gcd > 1.3:
                 return None
-            elif data.gcd < 1:
+            elif data.gcd <= 1.3:
                 return UseAbility(3581)  # 附体好了就用（前提泄三灾），判断上次灵攻时间
         if not data[16508] and not data.gauge.aetherflowStacks:
             return UseAbility(16508 if is_single(data, 0) < 3 or data.me.level < 35 else 16510)  # 超流 没有以太存货就发动
