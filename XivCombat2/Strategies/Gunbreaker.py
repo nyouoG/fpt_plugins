@@ -30,9 +30,6 @@ from .. import Define
 
 
 def count_enemy(data: LogicData):
-    """
-    :param skill_type: 0:冲击疾风震雷    1:六分    2:画圆斩
-    """
     if data.config.single == Define.FORCE_SINGLE: return 1
     if data.config.single == Define.FORCE_MULTI: return 3
     aoe = circle(data.me.pos.x, data.me.pos.y, 5)  # 六分

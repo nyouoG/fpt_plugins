@@ -47,7 +47,7 @@ def res_lv(data: LogicData) -> int:
         return 1
     elif data.config.resource == Define.RESOURCE_STINGY:
         return 0
-    return int(1e+10>data.max_ttk > 5)
+    return int(1e+10 > data.max_ttk > 5)
 
 
 class MachinistLogic(Strategy):
@@ -96,12 +96,12 @@ class MachinistLogic(Strategy):
                 data.reset_cd(hsid)
                 return UseAbility(2876)
         can_over = not data.gauge.overheatMilliseconds and data[16498] > 8 and data[hsid] > 8 and data.combo_remain > 11 and data.gauge.heat >= 50
-        if can_over and not data[2878]:
+        if can_over and not data[2878] and not data.config.ability_cnt:
             return UseAbility(2878)
         if can_over and data[2878] > 8:
-            if data.config.ability_cnt and data.gcd > 1:
+            if data.config.ability_cnt and data.gcd > 1.3:
                 return
-            elif data.gcd < 1:
+            elif data.gcd <= 1.3:
                 return UseAbility(17209)
         if data.gauge.heat < 50 and not data[7414]: return UseAbility(7414)
         if min(data[2874], data[2890]) < 60:
