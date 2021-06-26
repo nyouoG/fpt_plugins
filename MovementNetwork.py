@@ -50,7 +50,7 @@ class MovementNetwork(PluginBase):
         api.command.unregister(command)
 
     def search(self, event):
-        if event.id.startswith("network/send_"):
+        if event.id.startswith("network/send/"):
             for struct in [PositionSetPack, PositionAdjustPack]:
                 if len(event.raw_msg) == sizeof(struct):
                     self.logger(struct.__name__, hex(event.header.msg_type), struct.from_buffer(event.raw_msg))

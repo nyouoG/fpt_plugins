@@ -212,8 +212,8 @@ class CutTheTree(PluginBase):
 
         self.solver = Solver()
 
-        self.register_event(f'network/recv_{recv_opcode}', self.recv_work)
-        self.register_event(f'network/send_{send_opcode}', self.send_work)
+        self.register_event(f'network/recv/{recv_opcode}', self.recv_work)
+        self.register_event(f'network/send/{send_opcode}', self.send_work)
         api.XivNetwork.register_makeup(send_opcode, self.makeup_data)
         api.command.register(command, self.process_command)
 
