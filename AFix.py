@@ -60,7 +60,7 @@ class AFix(PluginBase):
                 t_pos = t.pos
                 angle = t_pos.r + skills[d.skill_id]
                 api.XivNetwork.send_messages([(PositionSetOpcode, bytearray(PositionSetPack(r=angle, pos=Vector3(
-                    x=t_pos.x + (math.sin(angle) * 0.1),
-                    y=t_pos.y + (math.cos(angle) * 0.1),
+                    x=t_pos.x + math.sin(angle),
+                    y=t_pos.y + math.cos(angle),
                     z=t_pos.z))))])
         return header, bytearray(d)
