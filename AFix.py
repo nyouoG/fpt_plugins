@@ -82,7 +82,7 @@ class AFix(PluginBase):
         c = api.Coordinate()
         frame_inject.register_once_call(
             api.XivNetwork.send_messages,
-            [(PositionSetOpcode, bytearray(PositionSetPack(r=c.r, pos=Vector3(x=c.x, y=c.y, z=c.z))))]
+            [(PositionSetOpcode, bytearray(PositionSetPack(r=c.r, pos=Vector3(x=c.x, y=c.y, z=c.z), unk2=0x93)))]
         )
         self.last_reset = perf_counter()
 
@@ -92,6 +92,6 @@ class AFix(PluginBase):
             t = api.XivMemory.actor_table.get_actor_by_id(d.target_id)
             if t is not None:
                 new_x, new_y = get_nearest(api.Coordinate(), t, skills[d.skill_id])
-                msg = PositionSetPack(r=t.pos.r, pos=Vector3(x=new_x, y=new_y, z=t.pos.z))
-                api.XivNetwork.send_messages([(PositionSetOpcode, bytearray(msg))])
+                msg = PositionSetPack(r=t.pos.r, pos=Vector3(x=new_x, y=new_y, z=t.pos.z), unk2=0x93)
+                api.XivNetwork.send_messages([(PositionSetOpcode, bytearray(msg))], False)
         return header, bytearray(d)
