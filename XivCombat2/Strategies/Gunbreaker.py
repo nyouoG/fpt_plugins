@@ -45,6 +45,12 @@ def res_lv(data: LogicData) -> int:
         return 0
     return int(data.max_ttk > 10)
 
+def use_no_mercy(data:LogicData):
+    if data.gcd < 2 and not data[16138] and (data[16164] < 10 or data[16164] > 25):
+        if data.combo_id in [16139, 16141 if data.me.level >= 40 else -1]:
+            if max(data[16159], data[16146], data[16153] < 4) and data.gauge.cartridges:
+                return True
+    return False
 
 class GunbreakerLogic(Strategy):
     name = "gunbreaker_logic"
@@ -59,11 +65,13 @@ class GunbreakerLogic(Strategy):
         has_spec = 1842 in data.effects or 1843 in data.effects or 1844 in data.effects
         if data.target_distance > 3 and cnt < 3:
             return
+        if use_no_mercy(data):
+            return UseAbility(16138)
+        if has_spec: return UseAbility(16155)  # 续剑
         if res and not data[16146] and (data[16138] > 5 or 1831 in data.effects) and data.gauge.cartridges and cnt < 3:
             return UseAbility(16146)  # 烈牙
         if not data[16153] and 1831 in data.effects:
             return UseAbility(16153)  # dot
-        if has_spec: return UseAbility(16155)  # 续剑
 
         if data.gauge.continuationState == 1:
             return UseAbility(16147)
@@ -91,13 +99,11 @@ class GunbreakerLogic(Strategy):
         if data.target_distance > 3: return
         if has_spec: return UseAbility(16155)
         if not res_lv(data): return
-        if data.gcd < 2 and not data[16138] and (data[16164] < 10 or data[16164] > 25):
-            if data.combo_id in [16139, 16141 if data.me.level >= 40 else -1]:
-                if max(data[16159], data[16146], data[16153] < 4) and data.gauge.cartridges:
-                    if data.config.ability_cnt and data.gcd > 1:
-                        return
-                    elif data.gcd <= 1:
-                        return UseAbility(16138)
+        if use_no_mercy(data):
+            if data.config.ability_cnt and data.gcd > 1.5:
+                return
+            elif data.gcd <= 1.5:
+                return UseAbility(16138)
         if not data[16164] and data[16138] > 10 and data.combo_id != 16139 and not data.gauge.cartridges:
             return UseAbility(16164)
         if not data[16144] and (data[16138] > 10 or 1831 in data.effects):
