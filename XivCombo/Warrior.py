@@ -12,7 +12,7 @@ def single(me):
     if combo_id == 31 and lv >= 4:
         return 37
     elif combo_id == 37 and lv >= 26:
-        if red is not None and red.timer > 5 or lv < 50:
+        if red is not None and red.timer > 30 or lv < 50:
             return 42
         return 45
     return 31
