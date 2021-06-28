@@ -23,16 +23,7 @@ from FFxivPythonTrigger import api
 7499,明镜止水,50
 7501,必杀剑·星眼,66
 7502,慈眼,58
-7855,必杀剑·地天,0
-7857,必杀剑·早天,0
 7867,居合术,30
-8824,雪风,0
-8825,月光,0
-8826,花车,0
-8827,燕飞,0
-8830,天下五剑,0
-8831,纷乱雪月花,0
-8832,必杀剑·震天,0
 16481,必杀剑·闪影,72
 16482,意气冲天,68
 16483,燕回返,76
@@ -45,6 +36,8 @@ from FFxivPythonTrigger import api
 1299,士风
 1298,阵风
 1233,明镜止水
+1252,开眼
+1236,燕飞效果提高
 """
 
 
@@ -66,9 +59,9 @@ def single(me):
     if combo_id == 7479 and me.level >= 40:
         return 7482
     if combo_id == 7477:
-        if me.level >= 50 and gauge.moon and gauge.flower and not gauge.snow:
+        if me.level >= 50 and bm > 10 and bf > 10 and not gauge.snow:
             return 7480
-        if me.level >= 18 and (bf < 7 or me.level >= 40 and not gauge.flower):
+        if me.level >= 18 and (bf < 7 or me.level >= 40 and not gauge.flower and bf < bm):
             return 7479
         if me.level >= 4:
             return 7479 if me.level >= 18 and bf < bm and (me.level < 30 or gauge.moon) else 7478
@@ -97,5 +90,5 @@ def kaeshi(me):
 combos = {
     7477: single,  # 刃风，单体
     7483: multi,  # 风雅，群体
-    16483: kaeshi,  # 燕回返，居合
+    7867: kaeshi,  # 居合，燕回返
 }
