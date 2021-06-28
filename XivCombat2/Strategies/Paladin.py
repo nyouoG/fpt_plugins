@@ -85,7 +85,7 @@ class PaladinLogic(Strategy):
                 if 725 not in t_effect or t_effect[725].timer < 5:
                     return UseAbility(3538)
             return UseAbility(21)
-        return UseAbilityw(9)
+        return UseAbility(9)
 
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         if data.config.query_ability:
