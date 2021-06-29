@@ -70,7 +70,9 @@ def get_nearest(me_pos, target, mode, dis=3):
 
     area = area.difference(Point(target.pos.x, target.pos.y).buffer(0.5))
     me = Point(me_pos.x, me_pos.y)
-    p1 = me if area.contains(me) else nearest_points(area, me)[0]
+    if area.contains(me):
+        return None
+    p1 = nearest_points(area, me)[0]
     return p1.x, p1.y
 
 
@@ -82,6 +84,7 @@ class AFix(PluginBase):
         self.last_reset = perf_counter()
         api.XivNetwork.register_makeup(ActionSendOpcode, self.makeup_action)
         self.register_event(f'network/action_effect', self.coor_return)
+        self.work = False
         self.adjust_mode = True
         self.adjust_sig = 0
         self.set_sig = 0x93
@@ -100,29 +103,36 @@ class AFix(PluginBase):
         if not (evt.raw_msg.unk0 or evt.raw_msg.unk1) and 0x10000 > evt.raw_msg.unk2 > 0:
             self.set_sig = evt.raw_msg.unk2
 
-    def goto(self, new_x=None, new_y=None, stop=False):
+    def goto(self, new_x=None, new_y=None, new_r=None, stop=False):
         c = api.Coordinate()
+        if new_r is None:
+            new_r = c.r
         target = Vector3(x=new_x if new_x is not None else c.x, y=new_y if new_y is not None else c.y, z=c.z)
         if self.adjust_mode:
-            msg = PositionAdjustPack(old_r=c.r, new_r=c.r, old_pos=target, new_pos=target, unk0=(0x4000 if stop else 0),
+            msg = PositionAdjustPack(old_r=c.r, new_r=new_r, old_pos=target, new_pos=target, unk0=(0x4000 if stop else 0),
                                      unk1=(0x40 if stop else 0) | self.adjust_sig)
             code = PositionAdjustOpcode
         else:
-            msg = PositionSetPack(r=c.r, pos=target, unk2=self.set_sig if stop else 0)
+            msg = PositionSetPack(r=new_r, pos=target, unk2=self.set_sig if stop else 0)
             code = PositionSetOpcode
-        api.XivNetwork.send_messages([(code, bytearray(msg))])
+        self.logger('goto', target, new_r, hex(msg.unk0), hex(msg.unk1), hex(msg.unk2))
+        api.XivNetwork.send_messages([(code, bytearray(msg))], False)
 
     def coor_return(self, evt):
-        if self.last_reset + 1 > perf_counter() or evt.source_id != api.XivMemory.actor_table.get_me().id or evt.action_type != 'action' or evt.action_id not in skills:
+        if not self.work or evt.source_id != api.XivMemory.actor_table.get_me().id or evt.action_type != 'action' or evt.action_id not in skills:
             return
         self.goto(stop=True)
-        # frame_inject.register_once_call(self.goto,stop=True)
-        self.last_reset = perf_counter()
+        self.work = False
 
     def makeup_action(self, header, raw):
         d = ActionSend.from_buffer(raw)
         if d.skill_id in skills:
             t = api.XivMemory.actor_table.get_actor_by_id(d.target_id)
             if t is not None:
-                self.goto(*get_nearest(api.Coordinate(), t, skills[d.skill_id]))
+                xy = get_nearest(api.Coordinate(), t, skills[d.skill_id])
+                if xy is not None:
+                    new_r = api.Coordinate().r
+                    new_r = new_r + (-math.pi if new_r > 0 else math.pi)
+                    self.work = True
+                    self.goto(*xy, new_r)
         return header, bytearray(d)

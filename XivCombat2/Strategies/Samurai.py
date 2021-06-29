@@ -112,8 +112,10 @@ def cal_kenki_v3(data: LogicData):
 def choose_kaeshi(data: LogicData):
     if count_enemy(data, 2) > 2:
         return 2
+    bm = data.effects[1298].timer if 1298 in data.effects else 0
+    bf = data.effects[1299].timer if 1299 in data.effects else 0
     t_effects = data.target.effects.get_dict()
-    if 1228 not in t_effects or t_effects[1228].timer < 7 and data.time_to_kill_target > 20:
+    if 1228 not in t_effects or t_effects[1228].timer < 7 and data.time_to_kill_target > 20 and min(bf, bm) > 20:
         return 1
     return 3
 
@@ -150,18 +152,22 @@ class SamuraiLogic(Strategy):
         if 1233 in data.effects:
             if not bf: return UseAbility(7479)
             if not bm: return UseAbility(7478)
+            if not data.gauge.snow and cnt2 < 3 and max(bf, bm) < 25:
+                return UseAbility(7480)
+            if not data.gauge.flower and not data.gauge.moon:
+                return UseAbility((7482 if cnt1 < 3 else 7485) if bf >= bm else (7481 if cnt1 < 3 else 7484))
             if not data.gauge.flower: return UseAbility(7482 if cnt1 < 3 else 7485)
             if not data.gauge.moon: return UseAbility(7481 if cnt1 < 3 else 7484)
             if not data.gauge.snow and cnt2 < 3: return UseAbility(7480)
-            return UseAbility(7482 if cnt1 < 3 else 7485)
+            return UseAbility((7482 if cnt1 < 3 else 7485) if bf >= bm else (7481 if cnt1 < 3 else 7484))
         if data.combo_id == 7478 and data.me.level >= 30:
             return UseAbility(7481)
         if data.combo_id == 7479 and data.me.level >= 40:
             return UseAbility(7482)
         if data.combo_id == 7477:
-            if data.me.level >= 50 and bm > 10 and bf > 10 and not data.gauge.snow:
+            if data.me.level >= 50 and bm > 8 and bf > 8 and not data.gauge.snow:
                 return UseAbility(7480)
-            if data.me.level >= 18 and (bf < 7 or data.me.level >= 40 and not data.gauge.flower and bf < bm):
+            if data.me.level >= 18 and (bf < self.gcd_total or data.me.level >= 40 and not data.gauge.flower and bf < bm):
                 return UseAbility(7479)
             if data.me.level >= 4:
                 return UseAbility(7479 if data.me.level >= 18 and bf < bm and (data.me.level < 30 or data.gauge.moon) else 7478)
@@ -182,7 +188,7 @@ class SamuraiLogic(Strategy):
             return UseAbility(16482)
 
         if 1298 not in data.effects:
-            if data.gauge.kenki >= 95:
+            if data.gauge.kenki >= 90:
                 cnt = count_enemy(data, 1)
                 if 1252 in data.effects and data.me.level >= 66 and cnt < 3:
                     if not data[7501]: return UseAbility(7501)
@@ -199,7 +205,7 @@ class SamuraiLogic(Strategy):
             if sen == kaeshi or sen == 3: return UseAbility(7494)
 
         # 明镜
-        if not data[7499] and 1299 in data.effects and data.gauge.snow and not (sen == kaeshi or sen == 3):
+        if not data[7499] and 1299 in data.effects and not (sen == kaeshi or sen == 3):
             return UseAbility(7499)
 
         if kaeshi == 1:
