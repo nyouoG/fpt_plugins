@@ -7,13 +7,13 @@ from shapely.ops import cascaded_union, nearest_points
 
 import math
 
-ActionSendOpcode = 844  # cn5.45
-PositionSetOpcode = 0x326  # cn5.45
-PositionAdjustOpcode = 0xd7  # cn5.45
-
 FRONT = 1
 SIDE = 2
 BACK = 3
+
+ActionSendOpcode = 844  # cn5.45
+PositionSetOpcode = 0x326  # cn5.45
+PositionAdjustOpcode = 0xd7  # cn5.45
 
 skills = {
     7481: BACK,  # 月光，背
@@ -84,6 +84,7 @@ class AFix(PluginBase):
         self.register_event(f'network/action_effect', self.coor_return)
         self.adjust_mode = True
         self.adjust_sig = 0
+        self.set_sig = 0x93
         self.register_event('network/position_adjust', self.deal_adjust)
         self.register_event('network/position_set', self.deal_set)
 
@@ -96,22 +97,26 @@ class AFix(PluginBase):
 
     def deal_set(self, evt):
         self.adjust_mode = False
+        if not (evt.raw_msg.unk0 or evt.raw_msg.unk1) and 0x10000 > evt.raw_msg.unk2 > 0:
+            self.set_sig = evt.raw_msg.unk2
 
-    def goto(self, new_x=None, new_y=None):
+    def goto(self, new_x=None, new_y=None, stop=False):
         c = api.Coordinate()
         target = Vector3(x=new_x if new_x is not None else c.x, y=new_y if new_y is not None else c.y, z=c.z)
         if self.adjust_mode:
-            msg = PositionAdjustPack(old_r=c.r, new_r=c.r, old_pos=target, new_pos=target, unk0=0x4000, unk1=0x40 | self.adjust_sig)
+            msg = PositionAdjustPack(old_r=c.r, new_r=c.r, old_pos=target, new_pos=target, unk0=(0x4000 if stop else 0),
+                                     unk1=(0x40 if stop else 0) | self.adjust_sig)
             code = PositionAdjustOpcode
         else:
-            msg = PositionSetPack(r=c.r, pos=target, unk2=0x93)
+            msg = PositionSetPack(r=c.r, pos=target, unk2=self.set_sig if stop else 0)
             code = PositionSetOpcode
-        api.XivNetwork.send_messages([(code, bytearray(msg))], False)
+        api.XivNetwork.send_messages([(code, bytearray(msg))])
 
     def coor_return(self, evt):
         if self.last_reset + 1 > perf_counter() or evt.source_id != api.XivMemory.actor_table.get_me().id or evt.action_type != 'action' or evt.action_id not in skills:
             return
-        frame_inject.register_once_call(self.goto)
+        self.goto(stop=True)
+        # frame_inject.register_once_call(self.goto,stop=True)
         self.last_reset = perf_counter()
 
     def makeup_action(self, header, raw):
