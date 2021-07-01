@@ -14,6 +14,12 @@ BACK = 3
 skills = {
     7481: BACK,  # 月光，背
     7482: SIDE,  # 花车，侧
+    53: BACK,  # 连击，背，武僧
+    54: BACK,  # 正拳，背，武僧
+    56: SIDE,  # 崩拳，侧，武僧
+    61: SIDE,  # 双掌打，侧，武僧
+    66: BACK,  # 破碎拳，背，武僧
+    74: SIDE,  # 双龙脚，侧，武僧
 }
 
 Vector3 = OffsetStruct({
