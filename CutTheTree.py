@@ -8,9 +8,26 @@ command = "@CTT"
 recv_opcode = 0x360  # cn5.45
 send_opcode = 0x39d  # cn5.45
 
+send_event_start_opcode = 0x3c3  # cn5.45
+send_event_finish_opcode = 0x20B  # cn5.45
+
 # recv_opcode = 789  # cn5.41
 # send_opcode = 843  # cn5.41
 
+SendEventStartPack = OffsetStruct({
+    'target_id': c_uint,
+    'unk0': c_uint,  # 0 or any
+    'event_id': c_ushort,  # 6
+    'category': c_ushort,  # 36
+    'unk3': c_uint,  # 0 or any
+}, 16)
+SendEventFinishPack = OffsetStruct({
+    'event_id': c_ushort,  # 6
+    'category': c_ushort,  # 36
+    'unk2': c_uint,  # fix 14
+    'unk3': c_uint,  # 0 or any
+    'unk4': c_uint,  # 0 or any
+}, 16)
 recv_packet = OffsetStruct({
     'cut_result': (EnumStruct(c_ubyte, {
         0x0: "Fail",
@@ -24,16 +41,34 @@ recv_packet = OffsetStruct({
     'future_profit': (c_ushort, 40),
 })
 send_packet = OffsetStruct({
-    'game_state': (EnumStruct(c_ubyte, {
+    'event_id': c_ushort,  # 6
+    'category': c_ushort,  # 36
+    'unk0': c_ushort,  # 14
+    'game_state': EnumStruct(c_ubyte, {
         0x07: "Start Game",
         0x09: "Difficulty choice",
         0x0A: "Felling",
         0x0B: "Start Next Round"
-    }), 6),
-    'param': (c_ubyte, 8)
+    }),
+    'unk1': c_ubyte,  # 0 when next else 1
+    'param': c_ubyte,
+    'unk2': c_ubyte,  # 0
+    'unk3': c_ushort,  # 0
+    'unk4': c_uint,  # 0 when start or next else 522
 }, 16)
 
 MAX = 101
+
+send_start_msg = send_packet(event_id=6, category=36, unk0=14, unk1=1)
+send_start_msg.game_state.set("Start Game")
+send_difficulty_msg = send_packet(event_id=6, category=36, unk0=14, unk1=1, unk4=522, param=2)
+send_difficulty_msg.game_state.set("Difficulty choice")
+send_next_round_msg = send_packet(event_id=6, category=36, unk0=14)
+send_next_round_msg.game_state.set("Start Next Round")
+send_fell_msg = send_packet(event_id=6, category=36, unk0=14, unk1=1, unk4=522)
+send_fell_msg.game_state.set("Felling")
+start_msg = SendEventStartPack(event_id=6, category=36)
+finish_msg = SendEventFinishPack(event_id=6, category=36, unk2=14)
 
 
 class Solver(object):
@@ -90,15 +125,13 @@ class CutTheTree(PluginBase):
     def __init__(self):
         super().__init__()
         self.enable = False
-        self.backup_fell = None
-        self.backup_next = None
         self.last_start = perf_counter()
 
-        self.KEY_UP = self.storage.data.setdefault("KEY_UP", 104)
-        self.KEY_CONFIRM = self.storage.data.setdefault("KEY_CONFIRM", 96)
-        self.KEY_CANCEL = self.storage.data.setdefault("KEY_CANCEL", 110)
-        self.KEY_LEFT = self.storage.data.setdefault("KEY_LEFT", 100)
-        self.storage.save()
+        # self.KEY_UP = self.storage.data.setdefault("KEY_UP", 104)
+        # self.KEY_CONFIRM = self.storage.data.setdefault("KEY_CONFIRM", 96)
+        # self.KEY_CANCEL = self.storage.data.setdefault("KEY_CANCEL", 110)
+        # self.KEY_LEFT = self.storage.data.setdefault("KEY_LEFT", 100)
+        # self.storage.save()
 
         self.solver = Solver()
 
@@ -125,32 +158,24 @@ class CutTheTree(PluginBase):
         api.command.unregister(command)
 
     def send(self, msg):
-        frame_inject.register_once_call(api.XivNetwork.send_messages, [(send_opcode, bytearray(msg))])
+        api.XivNetwork.send_messages([(send_opcode, bytearray(msg))])
 
     def start_new(self, evt):
         if self.enable:
-            # sleep(1)
             self.logger.debug("new game")
-            for i in range(5):
-                api.SendKeys.key_press(self.KEY_CANCEL, 100)  # cancel
             target = find_nearest_tree()
             if target is not None:
                 # self.logger.debug(target)
-                api.XivMemory.targets.set_current(target)
-                api.SendKeys.key_press(self.KEY_CONFIRM)  # confirm
-                api.SendKeys.key_press(self.KEY_CONFIRM)  # confirm
+                start_msg.target_id = target.id
+                api.XivNetwork.send_messages([(send_event_start_opcode, bytearray(start_msg))])
                 sleep(1)
-                api.SendKeys.key_press(self.KEY_UP)  # up
-                api.SendKeys.key_press(self.KEY_CONFIRM)  # confirm
+                self.send(send_start_msg)
 
     def send_fell(self):
-        if self.backup_fell is not None:
-            ans = self.solver.solve()
-            # self.logger(self.solver.pool)
-            if ans is None:
-                return
-            self.backup_fell.param = ans
-            self.send(self.backup_fell)
+        ans = self.solver.solve()
+        if ans is None: return
+        send_fell_msg.param = ans
+        self.send(send_fell_msg)
 
     def recv_work(self, event):
         data = recv_packet.from_buffer(event.raw_msg)
@@ -160,14 +185,11 @@ class CutTheTree(PluginBase):
         if self.enable:
             if data.progress_result:
                 self.send_fell()
-            elif data.future_profit and self.backup_next is not None:
-                self.send(self.backup_next)
+            elif data.future_profit:
+                self.send(send_next_round_msg)
             else:
-                api.Magic.echo_msg("Cut!")
-                wait = self.last_start + 1 - perf_counter()
-                if wait > 0: sleep(wait)
-                for i in range(5):
-                    api.SendKeys.key_press(self.KEY_CONFIRM)
+                sleep(3)
+                api.XivNetwork.send_messages([(send_event_finish_opcode, bytearray(finish_msg))])
 
     def send_work(self, event):
         data = send_packet.from_buffer(event.raw_msg)
@@ -177,18 +199,15 @@ class CutTheTree(PluginBase):
         self.logger.debug(msg)
         key = data.game_state.value()
         if msg == "Start Game" and self.enable:
-            sleep(2)
-            for i in range(5):
-                api.SendKeys.key_press(self.KEY_CONFIRM, 100)
+            self.send(send_difficulty_msg)
+            #sleep(3)
+            # for i in range(5):
+            #     api.SendKeys.key_press(self.KEY_CONFIRM, 100)
         if key == "Difficulty choice" or key == "Start Next Round":
             self.last_start = perf_counter()
             self.solver.reset()
-        if key == "Start Next Round":
-            self.backup_next = data
-            if self.enable:
-                self.send_fell()
-        elif key == "Felling":
-            self.backup_fell = data
+        if key == "Start Next Round" and self.enable:
+            self.send_fell()
 
     def makeup_data(self, header, raw):
         data = send_packet.from_buffer(raw)
