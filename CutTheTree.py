@@ -164,8 +164,8 @@ class CutTheTree(PluginBase):
                 self.send(self.backup_next)
             else:
                 api.Magic.echo_msg("Cut!")
-                if perf_counter() < self.last_start+1:
-                    sleep(self.last_start+1-perf_counter())
+                wait = self.last_start + 1 - perf_counter()
+                if wait > 0: sleep(wait)
                 for i in range(5):
                     api.SendKeys.key_press(self.KEY_CONFIRM)
 
@@ -179,7 +179,7 @@ class CutTheTree(PluginBase):
         if msg == "Start Game" and self.enable:
             sleep(2)
             for i in range(5):
-                api.SendKeys.key_press(self.KEY_CONFIRM,100)
+                api.SendKeys.key_press(self.KEY_CONFIRM, 100)
         if key == "Difficulty choice" or key == "Start Next Round":
             self.last_start = perf_counter()
             self.solver.reset()
