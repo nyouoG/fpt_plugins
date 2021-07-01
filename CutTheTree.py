@@ -11,11 +11,6 @@ send_opcode = 0x39d  # cn5.45
 # recv_opcode = 789  # cn5.41
 # send_opcode = 843  # cn5.41
 
-KEY_CONFIRM = 96
-KEY_CANCEL = 110
-KEY_LEFT = 100
-KEY_UP = 104
-
 recv_packet = OffsetStruct({
     'cut_result': (EnumStruct(c_ubyte, {
         0x0: "Fail",
@@ -97,12 +92,12 @@ class CutTheTree(PluginBase):
         self.enable = False
         self.backup_fell = None
         self.backup_next = None
+        self.last_start = perf_counter()
 
-        global KEY_UP, KEY_CONFIRM, KEY_CANCEL, KEY_LEFT
-        KEY_UP = self.storage.data.setdefault("KEY_UP", 104)
-        KEY_CONFIRM = self.storage.data.setdefault("KEY_CONFIRM", 96)
-        KEY_CANCEL = self.storage.data.setdefault("KEY_CANCEL", 110)
-        KEY_LEFT = self.storage.data.setdefault("KEY_LEFT", 100)
+        self.KEY_UP = self.storage.data.setdefault("KEY_UP", 104)
+        self.KEY_CONFIRM = self.storage.data.setdefault("KEY_CONFIRM", 96)
+        self.KEY_CANCEL = self.storage.data.setdefault("KEY_CANCEL", 110)
+        self.KEY_LEFT = self.storage.data.setdefault("KEY_LEFT", 100)
         self.storage.save()
 
         self.solver = Solver()
@@ -134,19 +129,19 @@ class CutTheTree(PluginBase):
 
     def start_new(self, evt):
         if self.enable:
-            sleep(1)
+            # sleep(1)
             self.logger.debug("new game")
             for i in range(5):
-                api.SendKeys.key_press(KEY_CANCEL, 100)  # cancel
+                api.SendKeys.key_press(self.KEY_CANCEL, 100)  # cancel
             target = find_nearest_tree()
             if target is not None:
                 # self.logger.debug(target)
                 api.XivMemory.targets.set_current(target)
-                api.SendKeys.key_press(KEY_CONFIRM)  # confirm
-                api.SendKeys.key_press(KEY_CONFIRM)  # confirm
+                api.SendKeys.key_press(self.KEY_CONFIRM)  # confirm
+                api.SendKeys.key_press(self.KEY_CONFIRM)  # confirm
                 sleep(1)
-                api.SendKeys.key_press(KEY_UP)  # up
-                api.SendKeys.key_press(KEY_CONFIRM)  # confirm
+                api.SendKeys.key_press(self.KEY_UP)  # up
+                api.SendKeys.key_press(self.KEY_CONFIRM)  # confirm
 
     def send_fell(self):
         if self.backup_fell is not None:
@@ -169,8 +164,10 @@ class CutTheTree(PluginBase):
                 self.send(self.backup_next)
             else:
                 api.Magic.echo_msg("Cut!")
+                if perf_counter() < self.last_start+1:
+                    sleep(self.last_start+1-perf_counter())
                 for i in range(5):
-                    api.SendKeys.key_press(KEY_CONFIRM)
+                    api.SendKeys.key_press(self.KEY_CONFIRM)
 
     def send_work(self, event):
         data = send_packet.from_buffer(event.raw_msg)
@@ -180,10 +177,11 @@ class CutTheTree(PluginBase):
         self.logger.debug(msg)
         key = data.game_state.value()
         if msg == "Start Game" and self.enable:
-            sleep(3)
+            sleep(2)
             for i in range(5):
-                api.SendKeys.key_press(KEY_CONFIRM)
+                api.SendKeys.key_press(self.KEY_CONFIRM,100)
         if key == "Difficulty choice" or key == "Start Next Round":
+            self.last_start = perf_counter()
             self.solver.reset()
         if key == "Start Next Round":
             self.backup_next = data
