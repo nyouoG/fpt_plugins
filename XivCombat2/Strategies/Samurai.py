@@ -136,11 +136,11 @@ class SamuraiLogic(Strategy):
         sen = sum([data.gauge.flower, data.gauge.moon, data.gauge.snow])
         kaeshi = choose_kaeshi(data)
         res = res_lv(data)
-        if bm and (sen == kaeshi or sen == 3) and not data.is_moving:  # 居合
+        if bm and (sen == kaeshi or sen == 3):  # 居合
             if not data[16487] and data.gauge.meditation > 2 and res:
                 return UseAbility(16487)
             if data.me.level < 52 or 1229 in data.effects:
-                return UseAbility(7867)
+                return None if data.is_moving else UseAbility(7867)
             elif data.me.level >= 52 and data.gauge.kenki >= 20:
                 return UseAbility(7494)
         if not data[16483] and data.gauge.prev_kaeshi_lv > 1 and res_lv(data):  # 回返
@@ -176,6 +176,8 @@ class SamuraiLogic(Strategy):
             if not data.gauge.flower: return UseAbility(7485)
             if not data.gauge.moon: return UseAbility(7484)
             return UseAbility(7484 if bf > bm else 7485)
+        if data.me.level >= 15 and (1236 in data.effects or data.target_distance > 6):
+            return UseAbility(7486)
         return UseAbility(7483 if bm and bf and cnt2 > 2 and data.me.level >= 26 else 7477)
 
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:

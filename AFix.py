@@ -11,10 +11,6 @@ FRONT = 1
 SIDE = 2
 BACK = 3
 
-ActionSendOpcode = 844  # cn5.45
-PositionSetOpcode = 0x326  # cn5.45
-PositionAdjustOpcode = 0xd7  # cn5.45
-
 skills = {
     7481: BACK,  # 月光，背
     7482: SIDE,  # 花车，侧
@@ -82,7 +78,7 @@ class AFix(PluginBase):
     def __init__(self):
         super().__init__()
         self.last_reset = perf_counter()
-        api.XivNetwork.register_makeup(ActionSendOpcode, self.makeup_action)
+        api.XivNetwork.register_makeup("ActionSend", self.makeup_action)
         self.register_event(f'network/action_effect', self.coor_return)
         self.work = False
         self.adjust_mode = True
@@ -92,7 +88,7 @@ class AFix(PluginBase):
         self.register_event('network/position_set', self.deal_set)
 
     def _onunload(self):
-        api.XivNetwork.unregister_makeup(ActionSendOpcode, self.makeup_action)
+        api.XivNetwork.unregister_makeup("ActionSend", self.makeup_action)
 
     def deal_adjust(self, evt):
         self.adjust_mode = True
@@ -111,10 +107,10 @@ class AFix(PluginBase):
         if self.adjust_mode:
             msg = PositionAdjustPack(old_r=c.r, new_r=new_r, old_pos=target, new_pos=target, unk0=(0x4000 if stop else 0),
                                      unk1=(0x40 if stop else 0) | self.adjust_sig)
-            code = PositionAdjustOpcode
+            code = "UpdatePositionInstance"
         else:
             msg = PositionSetPack(r=new_r, pos=target, unk2=self.set_sig if stop else 0)
-            code = PositionSetOpcode
+            code = "UpdatePositionHandler"
         self.logger('goto', target, new_r, hex(msg.unk0), hex(msg.unk1), hex(msg.unk2))
         api.XivNetwork.send_messages([(code, bytearray(msg))], False)
 
@@ -126,7 +122,7 @@ class AFix(PluginBase):
 
     def makeup_action(self, header, raw):
         d = ActionSend.from_buffer(raw)
-        if d.skill_id in skills:
+        if d.skill_id in skills and 1250 not in api.XivMemory.actor_table.get_me().effects.get_dict():
             t = api.XivMemory.actor_table.get_actor_by_id(d.target_id)
             if t is not None:
                 xy = get_nearest(api.Coordinate(), t, skills[d.skill_id])

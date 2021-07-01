@@ -4,11 +4,6 @@ from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 
 command = "@Move"
 
-PositionSetOpcode = 0x326  # cn5.45
-PositionAdjustOpcode = 0xd7  # cn5.45
-# PositionSetOpcode = 0x00ea # cn5.41
-# PositionAdjustOpcode = 0x0154 # cn5.41
-
 Vector3 = OffsetStruct({
     'x': c_float,
     'z': c_float,
@@ -40,13 +35,13 @@ class MovementNetwork(PluginBase):
         self.floating = 0
         self.no_fall = False
         # self.register_event(f"*", self.search)
-        api.XivNetwork.register_makeup(PositionSetOpcode, self.makeup_set)
-        api.XivNetwork.register_makeup(PositionAdjustOpcode, self.makeup_adjust)
+        api.XivNetwork.register_makeup("UpdatePositionHandler", self.makeup_set)
+        api.XivNetwork.register_makeup("UpdatePositionInstance", self.makeup_adjust)
         api.command.register(command, self.process_command)
 
     def _onunload(self):
-        api.XivNetwork.unregister_makeup(PositionSetOpcode, self.makeup_set)
-        api.XivNetwork.unregister_makeup(PositionAdjustOpcode, self.makeup_adjust)
+        api.XivNetwork.unregister_makeup("UpdatePositionHandler", self.makeup_set)
+        api.XivNetwork.unregister_makeup("UpdatePositionInstance", self.makeup_adjust)
         api.command.unregister(command)
 
     def search(self, event):
