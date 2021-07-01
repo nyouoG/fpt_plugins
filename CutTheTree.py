@@ -51,10 +51,11 @@ class Solver(object):
         self.count = 0
 
     def score(self, score, progress):
+        if not score: return
         self.progress = progress
         self.history.append((self.prev, score))
         if score == "Fail":
-            self.pool = [i for i in self.pool if abs(i - self.prev) > 20]
+            self.pool = [i for i in self.pool if abs(i - self.prev) >= 20]
         elif score == "Normal":
             self.pool = [i for i in self.pool if 10 <= abs(i - self.prev) <= 20]
             self.step = min(self.step, 5)
@@ -70,8 +71,10 @@ class Solver(object):
             return
         if self.prev is None:
             ans = 80 if random() > 0.5 else 20
-        elif len(self.pool) <= 1:
-            ans = self.prev
+        elif len(self.pool) == 1:
+            ans = self.pool[0]
+        elif not self.pool:
+            raise Exception("No ans")
         elif self.progress < 5 and [i for i in self.history if i[1] == "Great"]:
             ans = [i[0] for i in self.history if i[1] == "Great"][-1]
         else:
@@ -119,6 +122,7 @@ class CutTheTree(PluginBase):
     def send_fell(self):
         if self.backup_fell is not None:
             ans = self.solver.solve()
+            # self.logger(self.solver.pool)
             if ans is None:
                 return
             self.backup_fell.param = ans
@@ -127,16 +131,15 @@ class CutTheTree(PluginBase):
     def recv_work(self, event):
         data = recv_packet.from_buffer(event.raw_msg)
         res = data.cut_result.value()
-        if res is not None:
-            self.logger.debug(f"Felling >> {res} ({10 - data.progress_result}/10)")
-            self.solver.score(res, data.progress_result)
-            if self.enable:
-                if data.progress_result:
-                    self.send_fell()
-                elif data.future_profit and self.backup_next is not None:
-                    self.send(self.backup_next)
-                else:
-                    api.Magic.echo_msg("Cut!")
+        self.logger.debug(f"Felling >> {res} ({10 - data.progress_result}/10)")
+        self.solver.score(res, data.progress_result)
+        if self.enable:
+            if data.progress_result:
+                self.send_fell()
+            elif data.future_profit and self.backup_next is not None:
+                self.send(self.backup_next)
+            else:
+                api.Magic.echo_msg("Cut!")
 
     def send_work(self, event):
         data = send_packet.from_buffer(event.raw_msg)
@@ -151,9 +154,9 @@ class CutTheTree(PluginBase):
             self.backup_next = data
             if self.enable:
                 self.send_fell()
-        elif key == "Difficulty choice":
-            if self.enable:
-                self.send_fell()
+        # elif key == "Difficulty choice":
+        #     if self.enable:
+        #         self.send_fell()
         elif key == "Felling":
             self.backup_fell = data
 
@@ -164,6 +167,7 @@ class CutTheTree(PluginBase):
             data.param = 2
         elif key == "Felling":
             ans = self.solver.solve()
+            # self.logger(self.solver.pool)
             if ans is not None:
                 data.param = ans
         return header, bytearray(data)
