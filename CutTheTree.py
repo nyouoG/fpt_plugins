@@ -125,7 +125,6 @@ class CutTheTree(PluginBase):
     def __init__(self):
         super().__init__()
         self.enable = False
-        self.last_start = perf_counter()
         self.game_cnt = 0
 
         self.solver = Solver()
@@ -160,7 +159,7 @@ class CutTheTree(PluginBase):
             target = find_nearest_tree()
             if target is not None:
                 self.game_cnt += 1
-                self.logger.debug(f"new game #{self.game_cnt}")
+                self.logger.debug(f"start game #{self.game_cnt}")
                 start_msg.target_id = target.id
                 api.XivNetwork.send_messages([(send_event_start_opcode, bytearray(start_msg))])
                 self.send(send_start_msg)
@@ -181,6 +180,7 @@ class CutTheTree(PluginBase):
             elif data.future_profit:
                 self.send(send_next_round_msg)
             else:
+                self.logger.debug(f"finish game #{self.game_cnt}")
                 sleep(3)
                 api.XivNetwork.send_messages([(send_event_finish_opcode, bytearray(finish_msg))])
                 self.start_new()
