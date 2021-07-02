@@ -126,12 +126,7 @@ class CutTheTree(PluginBase):
         super().__init__()
         self.enable = False
         self.last_start = perf_counter()
-
-        # self.KEY_UP = self.storage.data.setdefault("KEY_UP", 104)
-        # self.KEY_CONFIRM = self.storage.data.setdefault("KEY_CONFIRM", 96)
-        # self.KEY_CANCEL = self.storage.data.setdefault("KEY_CANCEL", 110)
-        # self.KEY_LEFT = self.storage.data.setdefault("KEY_LEFT", 100)
-        # self.storage.save()
+        self.game_cnt = 0
 
         self.solver = Solver()
 
@@ -152,6 +147,7 @@ class CutTheTree(PluginBase):
         else:
             self.enable = not self.enable
         api.Magic.echo_msg("CutTheTree: [%s]" % ('enable' if self.enable else 'disable'))
+        self.start_new()
 
     def _onunload(self):
         api.XivNetwork.unregister_makeup(send_opcode, self.makeup_data)
@@ -160,27 +156,25 @@ class CutTheTree(PluginBase):
     def send(self, msg):
         api.XivNetwork.send_messages([(send_opcode, bytearray(msg))])
 
-    def start_new(self, evt):
+    def start_new(self, evt=None):
         if self.enable:
-            self.logger.debug("new game")
             target = find_nearest_tree()
             if target is not None:
-                # self.logger.debug(target)
+                self.game_cnt += 1
+                self.logger.debug(f"new game #{self.game_cnt}")
                 start_msg.target_id = target.id
                 api.XivNetwork.send_messages([(send_event_start_opcode, bytearray(start_msg))])
-                sleep(1)
                 self.send(send_start_msg)
+                self.send(send_difficulty_msg)
 
     def send_fell(self):
-        ans = self.solver.solve()
-        if ans is None: return
-        send_fell_msg.param = ans
+        send_fell_msg.param = self.solver.solve()
         self.send(send_fell_msg)
 
     def recv_work(self, event):
         data = recv_packet.from_buffer(event.raw_msg)
         res = data.cut_result.value()
-        self.logger.debug(f"Felling >> {res} ({10 - data.progress_result}/10)")
+        # self.logger.debug(f"Felling >> {res} ({10 - data.progress_result}/10)")
         self.solver.score(res, data.progress_result)
         if self.enable:
             if data.progress_result:
@@ -196,13 +190,8 @@ class CutTheTree(PluginBase):
         msg = data.game_state.value()
         if msg == "Felling" or msg == "Difficulty choice":
             msg = f"{msg} << {data.param}"
-        self.logger.debug(msg)
+        # self.logger.debug(msg)
         key = data.game_state.value()
-        if msg == "Start Game" and self.enable:
-            self.send(send_difficulty_msg)
-            #sleep(3)
-            # for i in range(5):
-            #     api.SendKeys.key_press(self.KEY_CONFIRM, 100)
         if key == "Difficulty choice" or key == "Start Next Round":
             self.last_start = perf_counter()
             self.solver.reset()
