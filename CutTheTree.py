@@ -132,7 +132,6 @@ class CutTheTree(PluginBase):
 
         self.register_event(f'network/recv/{recv_opcode}', self.recv_work, limit_sec=0)
         self.register_event(f'network/send/{send_opcode}', self.send_work, limit_sec=0)
-        self.register_event('network/undefined_recv/InventoryActionAck', self.start_new, limit_sec=0)
         api.XivNetwork.register_makeup(send_opcode, self.makeup_data)
         api.command.register(command, self.process_command)
 
@@ -184,6 +183,7 @@ class CutTheTree(PluginBase):
             else:
                 sleep(3)
                 api.XivNetwork.send_messages([(send_event_finish_opcode, bytearray(finish_msg))])
+                self.start_new()
 
     def send_work(self, event):
         data = send_packet.from_buffer(event.raw_msg)
