@@ -68,11 +68,17 @@ class DarkKnightLogic(Strategy):
         if data.config.query_ability:
             return data.config.get_query_ability()
         if not res_lv(data) or data.target_distance > 3: return
-        if not data[16472] and data.gauge.blood >= 50: return UseAbility(16472)
-        if not data[3641]: return UseAbility(3641)
-        if not data[3643]: return UseAbility(3643)
-        if not data[3639]: return UseAbility(3639)
-        if not data[7390] and (data[16472] > 10 or data.gauge.blood >= 50): return UseAbility(7390)
+        if not data[16472] and data.gauge.blood >= 50:
+            return UseAbility(16472)
+        if not data[3639]:
+            return UseAbility(3639)
+        if not data[3641]:
+            return UseAbility(3641)
+        if not data[3643]:
+            return UseAbility(3643)
+        if not data[7390] and (data[16472] > 10 or data.gauge.blood >= 50):
+            return UseAbility(7390)
         if not data[16466] and (data.me.currentMP >= (6000 if data.me.level >= 70 else 3000) or data.gauge.darkArt):
             return UseAbility(16467 if data.me.level >= 40 and count_enemy(data, 2) < 2 else 16466)
-        if not data[3625]: return UseAbility(3625)
+        if not data[3625]:
+            return UseAbility(3625)
