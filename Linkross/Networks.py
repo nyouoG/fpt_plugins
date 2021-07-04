@@ -18,6 +18,8 @@ send_place_card_pack = OffsetStruct({
 send_card_choose_pack = OffsetStruct({
     'event_id': (c_ushort, 0x0),
     'category': (c_ushort, 0x2),
+    'unk0': (c_uint, 0x4),
+    'unk1': (c_uint, 0x8),
     'cards': (c_uint * 5, 0xc),
 }, 40)
 
@@ -37,7 +39,7 @@ send_event_finish = OffsetStruct({
     'unk4': c_uint,
 }, 16)
 
-send_event_action=OffsetStruct({
+send_event_action = OffsetStruct({
     'event_id': c_ushort,
     'category': c_ushort,
     'param0': c_ubyte,
@@ -92,4 +94,3 @@ class recv_game_data_pack(OffsetStruct({
     @property
     def enemy_card(self):
         return [self.cards[4], self.cards[7], self.cards[6], self.cards[9], self.cards[8]]
-

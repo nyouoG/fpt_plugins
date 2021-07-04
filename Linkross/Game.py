@@ -127,6 +127,17 @@ class CardEvent(object):
         else:
             return self.event_id == other
 
+    @cached_property
+    def win_talk_id(self):
+        return self._row["DefaultTalk{PCWin}"].key
+
+    @cached_property
+    def draw_talk_id(self):
+        return self._row["DefaultTalk{Draw}"].key
+
+    @cached_property
+    def lose_talk_id(self):
+        return self._row["DefaultTalk{NPCWin}"].key
 
 class Card(object):
     def __init__(self, card_id: int):

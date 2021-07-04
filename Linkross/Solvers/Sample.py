@@ -6,7 +6,7 @@ class SampleSolver(SolverBase):
         return True
 
     def get_deck(self):
-        return 0,0,0,0,0
+        return 0x107,0x106,0xe0,0xb1,0xd2
 
     def solve(self, game):
         return 5, 9
