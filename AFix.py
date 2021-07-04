@@ -7,6 +7,8 @@ from shapely.ops import cascaded_union, nearest_points
 
 import math
 
+command = "@afix"
+
 FRONT = 1
 SIDE = 2
 BACK = 3
@@ -86,15 +88,18 @@ class AFix(PluginBase):
         self.last_reset = perf_counter()
         api.XivNetwork.register_makeup("ActionSend", self.makeup_action)
         self.register_event(f'network/action_effect', self.coor_return)
+        self._enable = False
         self.work = False
         self.adjust_mode = True
         self.adjust_sig = 0
         self.set_sig = 0x93
         self.register_event('network/position_adjust', self.deal_adjust)
         self.register_event('network/position_set', self.deal_set)
+        api.command.register(command, self.process_command)
 
     def _onunload(self):
         api.XivNetwork.unregister_makeup("ActionSend", self.makeup_action)
+        api.command.unregister(command)
 
     def deal_adjust(self, evt):
         self.adjust_mode = True
@@ -126,9 +131,21 @@ class AFix(PluginBase):
         self.goto(stop=True)
         self.work = False
 
+    def process_command(self, args):
+        if args:
+            if args[0] == 'on':
+                self._enable = True
+            elif args[0] == 'off':
+                self._enable = False
+            else:
+                api.Magic.echo_msg("unknown args: %s" % args[0])
+        else:
+            self._enable = not self._enable
+        api.Magic.echo_msg("AFix: [%s]" % ('enable' if self._enable else 'disable'))
+
     def makeup_action(self, header, raw):
         d = ActionSend.from_buffer(raw)
-        if d.skill_id in skills and 1250 not in api.XivMemory.actor_table.get_me().effects.get_dict():
+        if self._enable and d.skill_id in skills and 1250 not in api.XivMemory.actor_table.get_me().effects.get_dict():
             t = api.XivMemory.actor_table.get_actor_by_id(d.target_id)
             if t is not None:
                 xy = get_nearest(api.Coordinate(), t, skills[d.skill_id])
