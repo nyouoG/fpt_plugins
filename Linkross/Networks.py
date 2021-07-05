@@ -11,6 +11,8 @@ recv_game_data_opcode = 822
 send_place_card_pack = OffsetStruct({
     'event_id': (c_ushort, 0x0),
     'category': (c_ushort, 0x2),
+    'unk0':(c_uint,0x4),
+    'unk1':(c_uint,0x8),
     'round': (c_uint, 0xc),
     'hand_id': (c_uint, 0x10),
     'block_id': (c_uint, 0x14),
@@ -119,6 +121,8 @@ def game_finish(event_id):
 
 def place_card(event_id, game_round, hand_id=5, block_id=9):
     msg = send_place_card_pack(category=0x23, event_id=event_id, round=game_round, hand_id=hand_id, block_id=block_id)
+    msg.unk0=0x4000000
+    msg.unk1=0x5
     api.XivNetwork.send_messages([(send_place_card_opcode, bytearray(msg))])
 
 

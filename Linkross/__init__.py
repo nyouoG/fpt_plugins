@@ -129,7 +129,7 @@ class Linkross(PluginBase):
 
     def start_game(self, event):
         data = recv_game_data_pack.from_buffer(event.raw_msg)
-        if data.category != 35: return
+        if data.category != 35 or not self.stage: return
         self.game = Game(BLUE if data.me_first else RED, data.my_card, data.enemy_card, data.rules[:])
         # self.logger(self.game)
         if data.me_first:
@@ -139,7 +139,7 @@ class Linkross(PluginBase):
 
     def place_card(self, event):
         data = recv_place_card_pack.from_buffer(event.raw_msg)
-        if data.category != 35: return
+        if data.category != 35 or not self.stage: return
         if self.game is not None and self.stage > CONFIRM_DECK:
             self.game.place_card(data.block_id, data.hand_id, data.card_id)
             # self.logger(self.game)

@@ -25,7 +25,7 @@ class SampleSolver(SolverBase):
     def solve(self, game):
         hand_id = 5
         for i in range(5):
-            if game.blue_cards[i] is not None:
+            if game.get_current_cards()[i] is not None:
                 hand_id = i
                 break
         block_id = 9
@@ -33,4 +33,5 @@ class SampleSolver(SolverBase):
             if not game.blocks[i]:
                 block_id = i
                 break
+        #info('',hand_id,block_id)
         return hand_id, block_id
