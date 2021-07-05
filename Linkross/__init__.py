@@ -81,6 +81,7 @@ class Linkross(PluginBase):
             self.card_event = None
             self.stage = 0
             if self.auto_next:
+                sleep(1)
                 self.start_new()
 
     def refresh_available_cards(self):
