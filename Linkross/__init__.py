@@ -66,7 +66,7 @@ class Linkross(PluginBase):
         self.card_event = None
         self.stage = 0
         self.available_cards = []
-        self.auto_next = False
+        self.auto_next = 0
         self.mode = FOCUS
         self.lock = Lock()
         self.refresh_available_cards()
@@ -74,6 +74,7 @@ class Linkross(PluginBase):
 
     def reset(self, event):
         if event.raw_msg.category == 0x23:
+            self.auto_next -= 1
             self.logger("reset!")
             self.solver_used = None
             self.game = None
@@ -102,7 +103,7 @@ class Linkross(PluginBase):
             data = recv_duel_desc_pack.from_buffer(event.raw_msg)
             if data.category != 0x23 or self.stage != CONFIRM_TALK: return
             self.stage += 0.5
-            self.logger(f"{self.card_event}\ncurrent rules: {','.join([rule_sheet[rule]['Name'] for rule in data.rules if rule])}")
+            # self.logger(f"{self.card_event}\ncurrent rules: {','.join([rule_sheet[rule]['Name'] for rule in data.rules if rule])}")
             rules = set(data.rules)
             self.solver_used = None
             for solver_class in self.solvers:
@@ -131,7 +132,7 @@ class Linkross(PluginBase):
         data = recv_game_data_pack.from_buffer(event.raw_msg)
         if data.category != 35: return
         self.game = Game(BLUE if data.me_first else RED, data.my_card, data.enemy_card, data.rules[:])
-        #self.logger(self.game)
+        # self.logger(self.game)
         if not self.stage: return
         if data.me_first:
             place_card(self.card_event.event_id, self.game.round, *self.solver_used.solve(self.game))
@@ -140,10 +141,10 @@ class Linkross(PluginBase):
 
     def place_card(self, event):
         data = recv_place_card_pack.from_buffer(event.raw_msg)
-        if data.category != 35 : return
+        if data.category != 35: return
         if self.game is not None:
             self.game.place_card(data.block_id, data.hand_id, data.card_id)
-            #self.logger(self.game)
+            # self.logger(self.game)
             win = self.game.win()
             if win is not None:
                 if win == BLUE:
@@ -154,6 +155,7 @@ class Linkross(PluginBase):
                     self.logger("Draw!")
                 self.game = None
                 if self.stage > CONFIRM_DECK:
+                    self.auto_next += 1
                     end_game(self.card_event.event_id)
                     game_finish(self.card_event.event_id)
             elif self.game.current_player == BLUE and self.stage > CONFIRM_DECK:
@@ -189,5 +191,5 @@ class Linkross(PluginBase):
             self.mode = CURRENT
             self.start_new()
         elif args[0] == "auto_next":
-            self.auto_next = not self.auto_next
+            self.auto_next = int(not self.auto_next)
             return f"auto_next:{self.auto_next}"
