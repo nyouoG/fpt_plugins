@@ -277,6 +277,7 @@ class HandCard(object):
         return deepcopy(self)
 
 
+
 class Game(object):
     def __init__(self, first_player: int, blue_cards: list[int], red_cards: list[int], rules: list[int]):
         self.round = 0

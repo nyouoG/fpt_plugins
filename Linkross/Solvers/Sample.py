@@ -1,4 +1,6 @@
+from FFxivPythonTrigger.Logger import info
 from ..Solver import SolverBase
+from random import choice, sample, shuffle
 
 
 class SampleSolver(SolverBase):
@@ -6,7 +8,29 @@ class SampleSolver(SolverBase):
         return True
 
     def get_deck(self):
-        return 0x107,0x106,0xe0,0xb1,0xd2
+        cards = {i: list() for i in range(1, 6)}
+        for card in self.available_cards:
+            cards[card.stars].append(card.card_id)
+        choose = list()
+        if cards[5]:
+            choose.append(choice(cards[5]))
+        elif cards[4]:
+            choose.append(choice(cards[4]))
+        for i in range(3, 0, -1):
+            if len(choose) >= 5: break
+            choose += sample(cards[i], min(5 - len(choose), len(cards[i])))
+        shuffle(choose)
+        return tuple(choose)
 
     def solve(self, game):
-        return 5, 9
+        hand_id = 5
+        for i in range(5):
+            if game.blue_cards[i] is not None:
+                hand_id = i
+                break
+        block_id = 9
+        for i in range(9):
+            if not game.blocks[i]:
+                block_id = i
+                break
+        return hand_id, block_id
