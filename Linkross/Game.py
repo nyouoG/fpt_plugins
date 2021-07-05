@@ -102,8 +102,8 @@ class CardEvent(object):
         enpc = enpc_sheet[actor.eNpcId]
         for i in range(32):
             evt = enpc[f"ENpcData[{i}]"]
-            if evt is None: break
-            if evt.sheet.name == "TripleTriad": return cls(evt)
+            if evt is not None and evt.sheet.name == "TripleTriad":
+                return cls(evt)
         raise Exception("target actor has no card event")
 
     @classmethod
