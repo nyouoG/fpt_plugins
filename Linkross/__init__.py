@@ -102,7 +102,7 @@ class Linkross(PluginBase):
             data = recv_duel_desc_pack.from_buffer(event.raw_msg)
             if data.category != 0x23 or self.stage != CONFIRM_TALK: return
             self.stage += 0.5
-            # self.logger(f"{self.card_event}\ncurrent rules: {','.join([rule_sheet[rule]['Name'] for rule in data.rules if rule])}")
+            self.logger(f"{self.card_event}\ncurrent rules: {','.join([rule_sheet[rule]['Name'] for rule in data.rules if rule])}")
             rules = set(data.rules)
             self.solver_used = None
             for solver_class in self.solvers:
@@ -129,9 +129,10 @@ class Linkross(PluginBase):
 
     def start_game(self, event):
         data = recv_game_data_pack.from_buffer(event.raw_msg)
-        if data.category != 35 or not self.stage: return
+        if data.category != 35: return
         self.game = Game(BLUE if data.me_first else RED, data.my_card, data.enemy_card, data.rules[:])
-        # self.logger(self.game)
+        #self.logger(self.game)
+        if not self.stage: return
         if data.me_first:
             place_card(self.card_event.event_id, self.game.round, *self.solver_used.solve(self.game))
         else:
@@ -139,10 +140,10 @@ class Linkross(PluginBase):
 
     def place_card(self, event):
         data = recv_place_card_pack.from_buffer(event.raw_msg)
-        if data.category != 35 or not self.stage: return
-        if self.game is not None and self.stage > CONFIRM_DECK:
+        if data.category != 35 : return
+        if self.game is not None:
             self.game.place_card(data.block_id, data.hand_id, data.card_id)
-            # self.logger(self.game)
+            #self.logger(self.game)
             win = self.game.win()
             if win is not None:
                 if win == BLUE:
@@ -152,11 +153,12 @@ class Linkross(PluginBase):
                 else:
                     self.logger("Draw!")
                 self.game = None
-                end_game(self.card_event.event_id)
-                game_finish(self.card_event.event_id)
-            elif self.game.current_player == BLUE:
+                if self.stage > CONFIRM_DECK:
+                    end_game(self.card_event.event_id)
+                    game_finish(self.card_event.event_id)
+            elif self.game.current_player == BLUE and self.stage > CONFIRM_DECK:
                 place_card(self.card_event.event_id, self.game.round, *self.solver_used.solve(self.game))
-            elif self.game.current_player == RED:
+            elif self.game.current_player == RED and self.stage > CONFIRM_DECK:
                 place_card(self.card_event.event_id, self.game.round)
 
     def start_new(self):
