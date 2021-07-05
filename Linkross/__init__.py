@@ -4,7 +4,8 @@ from traceback import format_exc
 
 from FFxivPythonTrigger import PluginBase, api
 from FFxivPythonTrigger.AddressManager import AddressManager
-from FFxivPythonTrigger.memory import scan_address, scan_pattern
+from FFxivPythonTrigger.hook import Hook
+from FFxivPythonTrigger.memory import scan_address, scan_pattern, read_ushort, read_uint
 
 from .Networks import *
 from .Game import *
@@ -17,11 +18,11 @@ card_exist_func = CFUNCTYPE(c_ubyte, c_uint64, c_ushort)
 
 card_check_func_sig = "40 53 48 83 EC ? 48 8B D9 66 85 D2 74 ?"
 card_check_module_sig = "48 8D 0D ? ? ? ? 89 7C 24 ? 8D 57 ?"
+talk_hook_sig = "E8 ? ? ? ? 4C 8B 75 ? 4D 3B FE"
 
 FOCUS = 1
 CURRENT = 2
 
-START = 10
 CONFIRM_TALK = 11
 CONFIRM_RULE = 12
 CONFIRM_DECK = 14
@@ -38,15 +39,26 @@ class Linkross(PluginBase):
 
     def __init__(self):
         super().__init__()
+
+        class TalkHook(Hook):
+            restype = c_uint64
+            argtypes = [c_uint64, c_uint64]
+
+            def hook_function(_self, a1, a2):
+                r = _self.original(a1, a2)
+                if self.stage and read_ushort(a2 + 10) == 0x9:
+                    talk_finish(read_ushort(a2 + 8))
+                return r
+
         am = AddressManager(self.storage.data, self.logger)
         self.card_check_module = am.get('card_check_module', scan_address, card_check_module_sig, cmd_len=7)
         self._card_exist_func = card_exist_func(am.get('card_check_func', scan_pattern, card_check_func_sig))
+        self.talk_hook = TalkHook(am.get('talk_hook', scan_address, talk_hook_sig, cmd_len=5))
         self.storage.save()
         self.register_event(f"network/recv/{recv_game_data_opcode}", self.start_game)
         self.register_event(f"network/recv/{recv_place_card_opcode}", self.place_card)
         self.register_event(f"network/recv/{recv_duel_desc_opcode}", self.init_rules)
         self.register_event(f"network/recv/{recv_duel_action_finish_opcode}", self.duel_next_step)
-        self.register_event(f"network/recv_event_play", self.finish_talk)
         self.register_event(f"network/recv_event_finish", self.reset)
         self.solvers = [Sample.SampleSolver]
         self.solver_used = None
@@ -77,15 +89,20 @@ class Linkross(PluginBase):
     def card_exist(self, card_id: int):
         return bool(self._card_exist_func(self.card_check_module, card_id))
 
+    def _start(self):
+        self.talk_hook.install()
+        self.talk_hook.enable()
+
     def _onunload(self):
         api.command.unregister(command)
+        self.talk_hook.uninstall()
 
     def init_rules(self, event):
         with self.lock:
             data = recv_duel_desc_pack.from_buffer(event.raw_msg)
             if data.category != 0x23 or self.stage != CONFIRM_TALK: return
             self.stage += 0.5
-            self.logger(f"{self.card_event}\ncurrent rules: {','.join([rule_sheet[rule]['Name'] for rule in data.rules if rule])}")
+            # self.logger(f"{self.card_event}\ncurrent rules: {','.join([rule_sheet[rule]['Name'] for rule in data.rules if rule])}")
             rules = set(data.rules)
             self.solver_used = None
             for solver_class in self.solvers:
@@ -99,90 +116,48 @@ class Linkross(PluginBase):
         with self.lock:
             if self.stage == CONFIRM_RULE:
                 if self.solver_used is None: return
-                continue_msg = send_event_action(category=0x23, event_id=self.card_event.event_id, param3=2, param4=2)
-                continue_msg.param8 = 1
-                api.XivNetwork.send_messages([("EventAction", bytearray(continue_msg))])
+                confirm_rule_1(self.card_event.event_id)
                 self.stage += 1
             elif self.stage == CONFIRM_RULE + 1:
-                continue_msg = send_event_action(category=0x23, event_id=self.card_event.event_id, param3=1, param4=3)
-                continue_msg.param8 = 51
-                continue_msg.param9 = 2
-                api.XivNetwork.send_messages([("EventAction", bytearray(continue_msg))])
+                confirm_rule_2(self.card_event.event_id)
                 self.stage += 1
             elif self.stage == CONFIRM_DECK:
                 deck = self.solver_used.get_deck()
                 self.logger(deck)
-                deck_choose = send_card_choose_pack(category=0x23, event_id=self.card_event.event_id, cards=deck)
-                deck_choose.unk0 = 0x6000000
-                deck_choose.unk1 = 0x4
-                api.XivNetwork.send_messages([(send_card_choose_opcode, bytearray(deck_choose))])
+                choose_cards(self.card_event.event_id, *deck)
                 self.stage += 1
 
     def start_game(self, event):
         data = recv_game_data_pack.from_buffer(event.raw_msg)
         if data.category != 35: return
         self.game = Game(BLUE if data.me_first else RED, data.my_card, data.enemy_card, data.rules[:])
-        self.logger(self.game)
+        # self.logger(self.game)
         if data.me_first:
-            hand_id, block_id = self.solver_used.solve(self.game)
-            self.logger(f"hand: {hand_id}, block: {block_id}")
-            send_msg = send_place_card_pack(category=0x23,
-                                            event_id=self.card_event.event_id,
-                                            round=self.game.round,
-                                            hand_id=hand_id, block_id=block_id)
-            api.XivNetwork.send_messages([(send_place_card_opcode, bytearray(send_msg))])
+            place_card(self.card_event.event_id, self.game.round, *self.solver_used.solve(self.game))
         else:
-            send_msg = send_place_card_pack(category=0x23,
-                                            event_id=self.card_event.event_id,
-                                            round=self.game.round,
-                                            hand_id=5, block_id=9)
-            api.XivNetwork.send_messages([(send_place_card_opcode, bytearray(send_msg))])
+            place_card(self.card_event.event_id, self.game.round)
 
     def place_card(self, event):
         data = recv_place_card_pack.from_buffer(event.raw_msg)
         if data.category != 35: return
         if self.game is not None and self.stage > CONFIRM_DECK:
             self.game.place_card(data.block_id, data.hand_id, data.card_id)
-            self.logger(self.game)
+            # self.logger(self.game)
             win = self.game.win()
             if win is not None:
                 if win == BLUE:
-                    talk_code = self.card_event.draw_talk_id
                     self.logger("Blue win!")
                 elif win == RED:
-                    talk_code = self.card_event.lose_talk_id
                     self.logger("Red win!")
                 else:
-                    talk_code = self.card_event.win_talk_id
                     self.logger("Draw!")
                 self.game = None
-                finish_massage = send_event_action(category=0x23, event_id=self.card_event.event_id, param3=1, param4=6)
-                finish_massage.param8 = 189
-                api.XivNetwork.send_messages([("EventAction", bytearray(finish_massage))])
-                msg = send_event_finish(category=0x23, event_id=self.card_event.event_id)
-                api.XivNetwork.send_messages([("EventFinish", bytearray(msg))])
-                self.logger("Evt finish")
-                self.solver_used = None
-                self.game = None
-                self.card_event = None
-                self.stage = 0
-                msg = send_event_finish(category=0x9, event_id=talk_code & 0xffff)
-                api.XivNetwork.send_messages([("EventFinish", bytearray(msg))])
+                end_game(self.card_event.event_id)
+                game_finish(self.card_event.event_id)
             elif self.game.current_player == BLUE:
-                self.logger('')
-                hand_id, block_id = self.solver_used.solve(self.game)
-                self.logger(f"hand: {hand_id}, block: {block_id}")
-                send_msg = send_place_card_pack(category=0x23,
-                                                event_id=self.card_event.event_id,
-                                                round=self.game.round,
-                                                hand_id=hand_id, block_id=block_id)
-                api.XivNetwork.send_messages([(send_place_card_opcode, bytearray(send_msg))])
+                place_card(self.card_event.event_id, self.game.round, *self.solver_used.solve(self.game))
             elif self.game.current_player == RED:
-                send_msg = send_place_card_pack(category=0x23,
-                                                event_id=self.card_event.event_id,
-                                                round=self.game.round,
-                                                hand_id=5, block_id=9)
-                api.XivNetwork.send_messages([(send_place_card_opcode, bytearray(send_msg))])
+                place_card(self.card_event.event_id, self.game.round)
 
     def start_new(self):
         if self.stage:
@@ -194,15 +169,8 @@ class Linkross(PluginBase):
         else:
             raise Exception(f"Unknown mode: {self.mode}")
         self.card_event = CardEvent.from_actor(target)
-        self.stage = START
-        msg = send_client_trigger(category=0x23, event_id=self.card_event.event_id, target_bnpc_id=target.bNpcId, unk0=0x32f, unk1=0x1)
-        api.XivNetwork.send_messages([("ClientTrigger", bytearray(msg))])
-
-    def finish_talk(self, event):
-        if self.stage == START and event.raw_msg.category == 0x9:
-            msg = send_event_finish(category=0x9, event_id=event.raw_msg.event_id)
-            api.XivNetwork.send_messages([("EventFinish", bytearray(msg))])
-            self.stage = CONFIRM_TALK
+        game_start(self.card_event.event_id, target.bNpcId)
+        self.stage = CONFIRM_TALK
 
     def process_command_entrance(self, args):
         try:

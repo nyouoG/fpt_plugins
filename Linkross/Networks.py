@@ -1,3 +1,4 @@
+from FFxivPythonTrigger import api
 from FFxivPythonTrigger.memory.StructFactory import *
 
 send_place_card_opcode = 246
@@ -94,3 +95,48 @@ class recv_game_data_pack(OffsetStruct({
     @property
     def enemy_card(self):
         return [self.cards[4], self.cards[7], self.cards[6], self.cards[9], self.cards[8]]
+
+
+def game_start(event_id, b_npc_id):
+    msg = send_client_trigger(category=0x23, event_id=event_id, target_bnpc_id=b_npc_id, unk0=0x32f, unk1=0x1)
+    api.XivNetwork.send_messages([("ClientTrigger", bytearray(msg))])
+
+
+def end_game(event_id):
+    finish_massage = send_event_action(category=0x23, event_id=event_id, param3=1, param4=6)
+    finish_massage.param8 = 189
+    api.XivNetwork.send_messages([("EventAction", bytearray(finish_massage))])
+
+def talk_finish(event_id):
+    msg = send_event_finish(category=0x9, event_id=event_id)
+    api.XivNetwork.send_messages([("EventFinish", bytearray(msg))])
+
+
+def game_finish(event_id):
+    msg = send_event_finish(category=0x23, event_id=event_id)
+    api.XivNetwork.send_messages([("EventFinish", bytearray(msg))])
+
+
+def place_card(event_id, game_round, hand_id=5, block_id=9):
+    msg = send_place_card_pack(category=0x23, event_id=event_id, round=game_round, hand_id=hand_id, block_id=block_id)
+    api.XivNetwork.send_messages([(send_place_card_opcode, bytearray(msg))])
+
+
+def choose_cards(event_id, card1, card2, card3, card4, card5):
+    deck_choose = send_card_choose_pack(category=0x23, event_id=event_id, cards=(card1, card2, card3, card4, card5))
+    deck_choose.unk0 = 0x6000000
+    deck_choose.unk1 = 0x4
+    api.XivNetwork.send_messages([(send_card_choose_opcode, bytearray(deck_choose))])
+
+
+def confirm_rule_1(event_id):
+    continue_msg = send_event_action(category=0x23, event_id=event_id, param3=2, param4=2)
+    continue_msg.param8 = 1
+    api.XivNetwork.send_messages([("EventAction", bytearray(continue_msg))])
+
+
+def confirm_rule_2(event_id):
+    continue_msg = send_event_action(category=0x23, event_id=event_id, param3=1, param4=3)
+    continue_msg.param8 = 51
+    continue_msg.param9 = 2
+    api.XivNetwork.send_messages([("EventAction", bytearray(continue_msg))])
