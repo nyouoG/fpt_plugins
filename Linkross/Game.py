@@ -5,7 +5,6 @@ from copy import deepcopy
 from FFxivPythonTrigger.Logger import info
 from FFxivPythonTrigger.SaintCoinach import realm
 
-
 """
 1	天选	出现什么规则完全交给命运女神来决定。
 2	全明牌	互相公开手中所有的卡片进行游戏。
@@ -103,10 +102,11 @@ class CardEvent(object):
         for i in range(32):
             evt = enpc[f"ENpcData[{i}]"]
             if evt is not None and evt.sheet.name == "TripleTriad":
-                return cls(evt)
+                return cls.from_event_id(evt.key & 0xffff)
         raise Exception("target actor has no card event")
 
     @classmethod
+    @cache
     def from_event_id(cls, event_id):
         return cls(card_event_sheet[event_id | 0x230000])
 
@@ -137,6 +137,7 @@ class CardEvent(object):
     @cached_property
     def lose_talk_id(self):
         return self._row["DefaultTalk{NPCWin}"].key
+
 
 class Card(object):
     def __init__(self, card_id: int):
@@ -195,6 +196,7 @@ class Card(object):
             return self.right
 
     @classmethod
+    @cache
     def get_card(cls, card_id):
         return cls(card_id)
 
@@ -205,7 +207,6 @@ class Block(object):
         self.game = game
         self.card: Optional[Card] = None
         self.belongs_to = 0
-
 
     def copy(self):
         return deepcopy(self)
@@ -273,7 +274,6 @@ class HandCard(object):
 
     def copy(self):
         return deepcopy(self)
-
 
 
 class Game(object):
