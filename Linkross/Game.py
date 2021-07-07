@@ -2,6 +2,7 @@ from functools import cached_property, cache
 from typing import Optional
 from copy import deepcopy
 
+from FFxivPythonTrigger.Logger import info
 from FFxivPythonTrigger.SaintCoinach import realm
 
 
@@ -96,7 +97,6 @@ class CardEvent(object):
         return self._row["UsesRegionalRules"]
 
     @classmethod
-    @cache
     def from_actor(cls, actor):
         if not actor.eNpcId: raise Exception("Actor is not an Enpc")
         enpc = enpc_sheet[actor.eNpcId]
@@ -107,7 +107,6 @@ class CardEvent(object):
         raise Exception("target actor has no card event")
 
     @classmethod
-    @cache
     def from_event_id(cls, event_id):
         return cls(card_event_sheet[event_id | 0x230000])
 
@@ -196,7 +195,6 @@ class Card(object):
             return self.right
 
     @classmethod
-    @cache
     def get_card(cls, card_id):
         return cls(card_id)
 

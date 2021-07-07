@@ -59,7 +59,7 @@ class Linkross(PluginBase):
         self.register_event(f"network/recv/{recv_place_card_opcode}", self.place_card)
         self.register_event(f"network/recv/{recv_duel_desc_opcode}", self.init_rules)
         self.register_event(f"network/recv/{recv_duel_action_finish_opcode}", self.duel_next_step)
-        self.register_event(f"network/recv_event_finish", self.reset)
+        self.register_event(f"network/recv_event_finish", self.reset, 0)
         self.solvers = [Sample.SampleSolver]
         self.solver_used = None
         self.game = None
