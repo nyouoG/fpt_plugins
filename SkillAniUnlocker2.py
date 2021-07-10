@@ -56,7 +56,7 @@ class SkillAniUnlocker2(PluginBase):
         self.hook.enable()
 
     def _onunload(self):
-        api.command.unregister(command, self.process_command)
+        api.command.unregister(command)
         self.hook.uninstall()
 
     def process_command(self, args):
