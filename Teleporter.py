@@ -64,6 +64,9 @@ MainCoor = PointerStruct(Vector, 160)
 
 class Teleporter(PluginBase):
     name = "Teleporter"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'Teleporter.py'
+    hash_path = __file__
 
     def __init__(self):
         super().__init__()

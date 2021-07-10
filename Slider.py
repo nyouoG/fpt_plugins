@@ -9,6 +9,9 @@ is_casting_sig = "80 3D ? ? ? ? ? 74 ? 48 8B 03 48 8B CB FF 50 ?"
 
 class Slider(PluginBase):
     name = "Slider"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'Slider.py'
+    hash_path = __file__
 
     def __init__(self):
         super().__init__()

@@ -21,6 +21,9 @@ DEFAULT_HACK_LOCK = 0.15
 
 class SkillAniUnlocker2(PluginBase):
     name = "SkillAniUnlocker2"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'SkillAniUnlocker2.py'
+    hash_path = __file__
 
     def __init__(self):
         super().__init__()

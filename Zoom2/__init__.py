@@ -1,3 +1,4 @@
+import os
 import traceback
 import base64
 
@@ -49,6 +50,9 @@ class MinMax(OffsetStruct({
 
 class ZoomPlugin2(PluginBase):
     name = "Zoom2"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'Zoom2'
+    hash_path = os.path.dirname(__file__)
 
     def __init__(self):
         super().__init__()

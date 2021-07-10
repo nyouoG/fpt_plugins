@@ -121,6 +121,9 @@ class Solver(object):
 
 class CutTheTree(PluginBase):
     name = "CutTheTree"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'CutTheTree.py'
+    hash_path = __file__
 
     def __init__(self):
         super().__init__()

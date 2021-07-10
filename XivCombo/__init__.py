@@ -1,3 +1,5 @@
+import os
+
 from FFxivPythonTrigger.AddressManager import AddressManager
 from FFxivPythonTrigger.hook import Hook
 from FFxivPythonTrigger import PluginBase
@@ -49,6 +51,9 @@ class OnCheckIsIconReplaceableHook(Hook):
 
 class XivCombo(PluginBase):
     name = "xiv combo"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'XivCombo'
+    hash_path = os.path.dirname(__file__)
 
     def __init__(self):
         global _logger

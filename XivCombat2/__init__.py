@@ -1,3 +1,4 @@
+import os
 from ctypes import *
 from threading import Lock
 from time import perf_counter, sleep
@@ -73,6 +74,9 @@ HotbarBlock = OffsetStruct({
 
 class XivCombat2(PluginBase):
     name = "XivCombat2"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'XivCombat2'
+    hash_path = os.path.dirname(__file__)
 
     def __init__(self):
         super().__init__()

@@ -26,6 +26,9 @@ default = 10.4
 
 class SuperJump(PluginBase):
     name = "Super Jumper"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'SuperJump.py'
+    hash_path = __file__
 
     def __init__(self):
         super().__init__()

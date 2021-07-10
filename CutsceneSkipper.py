@@ -56,6 +56,9 @@ def dispatch():
 
 class CutsceneSkipper(PluginBase):
     name = "Cutscene Skipper"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'CutsceneSkipper.py'
+    hash_path = __file__
 
 
     def __init__(self):

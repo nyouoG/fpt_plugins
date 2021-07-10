@@ -82,6 +82,9 @@ def get_nearest(me_pos, target, mode, dis=3):
 
 class AFix(PluginBase):
     name = "AFix"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'AFix.py'
+    hash_path = __file__
 
     def __init__(self):
         super().__init__()

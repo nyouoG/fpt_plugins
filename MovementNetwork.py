@@ -29,6 +29,9 @@ PositionAdjustPack = OffsetStruct({
 
 class MovementNetwork(PluginBase):
     name = "MovementNetwork"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'MovementNetwork.py'
+    hash_path = __file__
 
     def __init__(self):
         super().__init__()

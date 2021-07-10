@@ -34,6 +34,9 @@ class SpeedHookFly(hook.Hook):
 
 class SpeedHack(PluginBase):
     name = "speed hack"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'SpeedHack.py'
+    hash_path = __file__
 
     def __init__(self):
         super().__init__()

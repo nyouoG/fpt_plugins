@@ -1,3 +1,4 @@
+import os
 from threading import Lock
 from time import sleep
 from traceback import format_exc
@@ -31,6 +32,10 @@ DUEL = 15
 
 class Linkross(PluginBase):
     name = "Linkross"
+    git_repo = 'nyouoG/fpt_plugins'
+    repo_path = 'Linkross'
+    hash_path = os.path.dirname(__file__)
+
     game: Optional[Game]
     card_event: Optional[CardEvent]
     available_cards: list[Card]
