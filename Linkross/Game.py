@@ -2,7 +2,6 @@ from functools import cached_property, cache
 from typing import Optional
 from copy import deepcopy
 
-from FFxivPythonTrigger.Logger import info
 from FFxivPythonTrigger.SaintCoinach import realm
 
 """
