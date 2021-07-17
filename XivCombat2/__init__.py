@@ -217,7 +217,7 @@ class XivCombat2(PluginBase):
                 Api.set_current_target(Api.get_actor_by_id(to_use.target_id))
             if isinstance(to_use, Strategy.UseAbility) and Api.skill_queue_is_empty():
                 # actor=Api.get_actor_by_id(to_use.target_id)
-                # self.logger.debug(f"use:{action_sheet[to_use.ability_id]['Name']} on {actor.Name}({hex(actor.id)[2:]}/{bin(actor.unitStatus1)}/{bin(actor._uint_0x98)}")
+                # self.logger.debug(f"use:{action_sheet[to_use.ability_id]['Name']}({to_use.ability_id}) on {actor.Name}({hex(actor.id)[2:]}/{bin(actor.unitStatus1)}/{bin(actor._uint_0x98)}")
                 use_ability(to_use)
             elif isinstance(to_use, Strategy.UseItem):  # 使用道具，应该只有食物或者爆发药吧？
                 use_item(to_use)
