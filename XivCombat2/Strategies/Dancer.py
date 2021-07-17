@@ -146,7 +146,7 @@ class DancerLogic(Strategy):
         if 1818 in data.effects or 1819 in data.effects or data.target_distance > 25: return
         res = res_lv(data)
         if res:
-            if data[15998] > 100 and not data[16011]:
+            if 112 > data[15998] > 100 and not data[16011]:
                 return UseAbility(16011)
             if data[15998] > 40 and not data[16013] and not {1815, 1814, 1817, 1816}.intersection(set(data.effects.keys())):
                 return UseAbility(16013)
