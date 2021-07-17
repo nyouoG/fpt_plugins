@@ -23,15 +23,6 @@ class SampleSolver(SolverBase):
         return tuple(choose)
 
     def solve(self, game):
-        hand_id = 5
-        for i in range(5):
-            if game.get_current_cards()[i] is not None:
-                hand_id = i
-                break
-        block_id = 9
-        for i in range(9):
-            if not game.blocks[i]:
-                block_id = i
-                break
-        #info('',hand_id,block_id)
+        hand_id = choice([i for i in range(5) if game.blue_cards[i] is not None]+[5])
+        block_id = choice([i for i in range(9) if not game.blocks[i]]+[9])
         return hand_id, block_id
