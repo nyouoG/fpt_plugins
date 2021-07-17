@@ -114,7 +114,7 @@ def choose_kaeshi(data: LogicData):
         return 2
     bm = data.effects[1298].timer if 1298 in data.effects else 0
     bf = data.effects[1299].timer if 1299 in data.effects else 0
-    t_effects = data.target.effects.get_dict()
+    t_effects = data.target.effects.get_dict(source=data.me.id)
     if 1228 not in t_effects or t_effects[1228].timer < 7 and data.time_to_kill_target > 20 and min(bf, bm) > 20:
         return 1
     return 3

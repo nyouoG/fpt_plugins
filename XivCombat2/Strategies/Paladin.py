@@ -40,6 +40,8 @@ from .. import Define
 """
 """
 725,沥血剑,体力逐渐减少,
+1368,安魂祈祷
+76,"战逃反应"
 """
 
 
@@ -73,9 +75,12 @@ class PaladinLogic(Strategy):
         if data.config.query_skill:  # 队列技能
             return data.config.get_query_skill()
         cnt = count_enemy(data, 0)
-        if cnt > 2:
-            if data.me.level >= 40 and data.combo_id == 7381: return UseAbility(16457)
-            if data.me.level >= 6: return UseAbility(7381)
+        if data.me.level >= 40 and data.combo_id == 7381: return UseAbility(16457)
+        if cnt > 1 and data.me.level >= 6:
+            if 1368 in data.effects and data.me.level >= 72 and (not data.is_moving or data.me.lv >= 78):
+                return UseAbility(16459)
+            else:
+                return UseAbility(7381)
         if data.target_distance > 3: return
         if data.combo_id == 9 and data.me.level >= 4:
             return UseAbility(15)
@@ -85,13 +90,19 @@ class PaladinLogic(Strategy):
                 if 725 not in t_effect or t_effect[725].timer < 5:
                     return UseAbility(3538)
             return UseAbility(21)
-        return UseAbility(9)
+        if 1368 in data.effects and (not data.is_moving or data.me.level >= 78):
+            return UseAbility(7384)
+        else:
+            return UseAbility(9)
+
 
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         if data.config.query_ability:
             return data.config.get_query_ability()
         if data.target_distance > 3: return
         if res_lv(data):
-            if not data[20]: return UseAbility(20)
+            if not data[20] and 1368 not in data.effects: return UseAbility(20)
+            if not data[7383] and 76 not in data.effects and data.me.currentMP / data.me.maxMP > 0.8 and data.combo_id not in {7381, 9, 15}:
+                return UseAbility(7383)
             if not data[29]: return UseAbility(29)
             if not data[23]: return UseAbility(23)
