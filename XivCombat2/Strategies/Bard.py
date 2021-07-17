@@ -6,6 +6,9 @@ from ..Strategy import *
 from .. import Define
 
 """
+九天溢出
+"""
+"""
 3559,放浪神的小步舞曲,52
 114,贤者的叙事谣,30
 116,军神的赞美歌,40
@@ -53,9 +56,9 @@ from .. import Define
 bard_aoe_angle = radians(90)
 
 
-def is_single(data: LogicData, skill_type: int) -> bool:
-    if data.config.single == Define.FORCE_SINGLE: return True
-    if data.config.single == Define.FORCE_MULTI: return False
+def cnt_enemy(data: LogicData, skill_type: int) -> int:
+    if data.config.single == Define.FORCE_SINGLE: return 1
+    if data.config.single == Define.FORCE_MULTI: return 9
     if skill_type == 0:
         aoe = sector(data.me.pos.x, data.me.pos.y, 12, bard_aoe_angle, data.me.target_radian(data.target))  # 连珠箭
     elif skill_type == 1:
@@ -64,12 +67,7 @@ def is_single(data: LogicData, skill_type: int) -> bool:
         aoe = circle(data.me.pos.x, data.me.pos.y, 8)  # 死亡箭雨
     else:
         aoe = circle(data.me.pos.x, data.me.pos.y, 25)  # 死亡箭雨
-    cnt = 0
-    for enemy in data.valid_enemies:
-        if aoe.intersects(enemy.hitbox):
-            cnt += 1
-            if cnt > 1: return False
-    return True
+    return sum(map(lambda x: aoe.intersects(x.hitbox), data.valid_enemies))
 
 
 def res_lv(data: LogicData) -> int:
@@ -84,12 +82,14 @@ def res_lv(data: LogicData) -> int:
 
 def bard_dots(data: LogicData):
     lv = data.me.level
+    if lv < 6: return
     song = data.gauge.songType.value()
+    e_cnt = cnt_enemy(data, 0)
     poison, wind = (124, 129) if lv < 64 else (1200, 1201)
-    t = data.gcd_total * 2 if 125 not in data.effects or data.effects[125].timer > 7 else 15
+    t = data.gcd_total * 2.5 if 125 not in data.effects or data.effects[125].timer > 7 else 15
     t_effects = data.target.effects.get_dict(source=data.me.id)
     need_poison = (poison not in t_effects or t_effects[poison].timer < t) and data.time_to_kill_target > 10
-    need_wind = (wind not in t_effects or t_effects[wind].timer < t) and data.time_to_kill_target > 10
+    need_wind = (wind not in t_effects or t_effects[wind].timer < t) and data.time_to_kill_target > 10 and e_cnt < 4
     if lv > 56 and (need_wind or need_poison) and poison in t_effects and wind in t_effects: return 3560,
     if need_poison: return 100,
     if lv >= 30 and need_wind: return 113,
@@ -104,7 +104,7 @@ def bard_dots(data: LogicData):
     for e in data.valid_enemies:
         if e.id == data.target.id or data.actor_distance_effective(e) > 24: continue
         t_effects = e.effects.get_dict(source=data.me.id)
-        need_wind = (wind not in t_effects or t_effects[wind].timer < t)
+        need_wind = (wind not in t_effects or t_effects[wind].timer < t) and e_cnt < 4
         need_poison = (poison not in t_effects or t_effects[poison].timer < t)
         if not (need_wind and need_poison): cnt += 1
         if cnt > cnt_cut:
@@ -133,7 +133,7 @@ def song_logic(data: LogicData) -> Optional[int]:
         if not data[114] and song_end: return 114
     else:
         is_p = song_strategy == '80' and song == "paeon" and data.gauge.songProcs > 3 and max([data[3559], data[114]]) <= 30
-        if is_single(data, 3):
+        if cnt_enemy(data, 3) < 2:
             if not data[3559] and (song_end or is_p): return 3559
             if not data[114] and (song_end or is_p): return 114
         else:
@@ -153,12 +153,13 @@ class BardLogic(Strategy):
         if data.config.query_skill:
             return data.config.get_query_skill()
         lv = data.me.level
-        if 122 in data.effects: return UseAbility(98)
+        cnt = cnt_enemy(data, 0)
+        if 122 in data.effects and cnt < 3: return UseAbility(98)
         use_dot = bard_dots(data)
         if (use_dot is None or len(use_dot) < 2) and data.gauge.soulGauge >= 90: return UseAbility(16496)
         if use_dot is not None:
             return UseAbility(*use_dot)
-        return UseAbility(106 if not is_single(data, 0) and lv >= 18 else 97)
+        return UseAbility(106 if cnt > 1 and lv >= 18 else 97)
 
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         if data.config.query_ability:
@@ -174,11 +175,11 @@ class BardLogic(Strategy):
             if not data[101] and full_dot:
                 if data.config.ability_cnt and data.gcd > 1.5:
                     return
-                elif data.gcd <=  1.5:
+                elif data.gcd <= 1.5:
                     return UseAbility(101)
             if not data[118] and data[101] > 10 and song: return UseAbility(118)
             if not data[107] and full_dot and 122 not in data.effects and 125 in data.effects: return UseAbility(107)
-            if not data[3562] and full_dot: return UseAbility(16494 if not is_single(data, 1) and lv >= 72 else 3562)
+            if not data[3562] and full_dot: return UseAbility(16494 if cnt_enemy(data, 1) > 1 and lv >= 72 else 3562)
 
             if perf_counter() - self.last_song > 3:
                 song_to_use = song_logic(data)
@@ -187,5 +188,5 @@ class BardLogic(Strategy):
                     return UseAbility(song_to_use)
 
         if song == "minuet" and data.gauge.songProcs > (2 if data.gauge.songMilliseconds > data.gcd_total * 1000 else 0): return UseAbility(7404)
-        if not data[110]: return UseAbility(117 if not is_single(data, 2) and lv >= 45 else 110)
+        if not data[110]: return UseAbility(117 if cnt_enemy(data, 2) > 1 and lv >= 45 else 110)
         if not data[3558] and (lv < 68 or song): return UseAbility(3558)
