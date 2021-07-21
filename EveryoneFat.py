@@ -13,6 +13,7 @@ class EveryoneFat(PluginBase):
     name = "EveryoneFat"
     git_repo = 'nyouoG/fpt_plugins'
     repo_path = 'EveryoneFat.py'
+    hash_path = __file__
 
     def __init__(self):
         super().__init__()
