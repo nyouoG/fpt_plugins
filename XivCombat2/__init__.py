@@ -1,5 +1,6 @@
 import os
 from ctypes import *
+from functools import cache
 from threading import Lock
 from time import perf_counter, sleep
 from traceback import format_exc
@@ -17,7 +18,6 @@ ERR_LIMIT = 20
 DEFAULT_PERIOD = 0.2
 command = "@aCombat"
 action_sheet = realm.game_data.get_sheet('Action')
-is_area_action_cache = dict()
 
 
 def target_key(key: str):
@@ -54,11 +54,14 @@ def use_item(to_use: Strategy.UseItem):
             Api.use_item(to_use.item_id, True, to_use.target_id)
 
 
+@cache
+def is_area_action(action_id: int):
+    return action_sheet[action_id]['TargetArea']
+
+
 def use_ability(to_use: Strategy.UseAbility):
     if to_use.ability_id is None: return
-    if to_use.ability_id not in is_area_action_cache:
-        is_area_action_cache[to_use.ability_id] = action_sheet[to_use.ability_id]['TargetArea']
-    if is_area_action_cache[to_use.ability_id]:
+    if is_area_action(to_use.ability_id):
         actor = Api.get_actor_by_id(to_use.target_id) if to_use.target_id != 0xe0000000 else Api.get_me_actor()
         if actor is not None:
             Api.use_area_action(to_use.ability_id, actor.pos.x, actor.pos.y, actor.pos.z, actor.id)
@@ -88,25 +91,30 @@ class XivCombat2(PluginBase):
             def hook_function(_self, a1, block_p):
                 try:
                     # self.logger(block_p[0].type, block_p[0].param,self.is_working , self.config.enable)
-                    if not (self.is_working and self.config.enable):
-                        return _self.original(a1, block_p)
-                    block = block_p[0]
-                    t = Api.get_current_target()
-                    t_id = Api.get_me_actor().id if t is None else t.id
-                    if block.type == 1:
-                        self.config.enable = False
-                        self.logger.debug(f"force action {block.param}")
-                        self.config.ability_cnt += 1
-                        use_ability(Strategy.UseAbility(block.param, t_id))
-                        self.config.enable = True
-                        return 1
-                    elif block.type == 2 or block.type == 10:
-                        self.config.enable = False
-                        self.logger.debug(f"force {'item' if block.type == 2 else 'common'} {block.param}")
-                        Api.reset_ani_lock()
-                        Api.do_action(2 if block.type == 2 else 5, block.param, t_id)
-                        self.config.enable = True
-                        return 1
+                    if self.config.enable:
+                        block = block_p[0]
+                        if self.is_working:
+                            t = Api.get_current_target()
+                            t_id = Api.get_me_actor().id if t is None else t.id
+                            if block.type == 1:
+                                self.config.enable = False
+                                self.logger.debug(f"force action {block.param}")
+                                self.config.ability_cnt += 1
+                                use_ability(Strategy.UseAbility(block.param, t_id))
+                                self.config.enable = True
+                                return 1
+                            elif block.type == 2 or block.type == 10:
+                                self.config.enable = False
+                                self.logger.debug(f"force {'item' if block.type == 2 else 'common'} {block.param}")
+                                Api.reset_ani_lock()
+                                Api.do_action(2 if block.type == 2 else 5, block.param, t_id)
+                                self.config.enable = True
+                                return 1
+                        elif self.config.auto_location and is_area_action(block.param):
+                            t = Api.get_current_target()
+                            use_ability(Strategy.UseAbility(block.param, Api.get_me_actor().id if t is None else t.id))
+                            return 1
+
                 except Exception:
                     self.logger.error("error in hotbar hook", format_exc())
                 return _self.original(a1, block_p)
@@ -348,11 +356,14 @@ class XivCombat2(PluginBase):
             self.config.custom_settings[args[1]] = ' '.join(args[2:])
             return self.config.custom_settings
         elif args[0] == "auto_gcd":
-            if len(args) >1:
+            if len(args) > 1:
                 self.config.auto_gcd = int(args[1])
             else:
                 self.config.auto_gcd = None
             return f"auto gcd: [{self.config.auto_gcd}]"
+        elif args[0] == "auto_location":
+            self.config.auto_location = not self.config.auto_location
+            return f"auto location: [{self.config.auto_location}]"
         else:
             return f"unknown args: [{args[0]}]"
 
