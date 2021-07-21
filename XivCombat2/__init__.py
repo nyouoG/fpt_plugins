@@ -110,7 +110,7 @@ class XivCombat2(PluginBase):
                                 Api.do_action(2 if block.type == 2 else 5, block.param, t_id)
                                 self.config.enable = True
                                 return 1
-                        elif self.config.auto_location and is_area_action(block.param):
+                        elif self.config.auto_location and block.type == 1 and is_area_action(block.param):
                             t = Api.get_current_target()
                             use_ability(Strategy.UseAbility(block.param, Api.get_me_actor().id if t is None else t.id))
                             return 1
