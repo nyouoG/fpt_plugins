@@ -206,7 +206,11 @@ class XivCombat2(PluginBase):
                 if process_non_gcd:
                     to_use = self.config.get_query_ability()
                     if to_use is not None: self.config.ability_cnt += 1
-                if to_use is None: return DEFAULT_PERIOD
+                if to_use is None:
+                    if self.config.auto_gcd is not None and not data.gcd and data.valid_enemies:
+                        to_use = Strategy.UseAbility(self.config.auto_gcd)
+                    else:
+                        return DEFAULT_PERIOD
 
         # 处理决策行为
         if self.config.enable:
@@ -343,6 +347,12 @@ class XivCombat2(PluginBase):
         elif args[0] == "set":
             self.config.custom_settings[args[1]] = ' '.join(args[2:])
             return self.config.custom_settings
+        elif args[0] == "auto_gcd":
+            if len(args) >1:
+                self.config.auto_gcd = int(args[1])
+            else:
+                self.config.auto_gcd = None
+            return f"auto gcd: [{self.config.auto_gcd}]"
         else:
             return f"unknown args: [{args[0]}]"
 
