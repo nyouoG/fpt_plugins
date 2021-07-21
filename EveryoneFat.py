@@ -16,7 +16,7 @@ class EveryoneFat(PluginBase):
 
     def __init__(self):
         super().__init__()
-        self.fatten = 0
+        self.fatten = 0.
 
         class ActorHitboxGetHook(Hook):
             restype = c_float
@@ -44,7 +44,7 @@ class EveryoneFat(PluginBase):
         try:
             if arg[0] == "set":
                 temp = self.fatten
-                self.fatten = int(arg[1])
+                self.fatten = float(arg[1])
                 if not self.fatten and self.actor_hitbox_get_hook.is_enabled:
                     self.actor_hitbox_get_hook.disable()
                 elif self.fatten and not self.actor_hitbox_get_hook.is_enabled:
