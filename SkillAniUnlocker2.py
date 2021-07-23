@@ -107,7 +107,7 @@ class SkillAniUnlocker2(PluginBase):
                             return "unknown arguments {}".format(args[1])
                     else:
                         self.patch_ninja(not self.is_ninja_patch())
-                    print(f"ninja patch:{self.is_ninja_patch()}")
+                    return(f"ninja patch:{self.is_ninja_patch()}")
                 else:
                     return "unknown arguments {}".format(args[0])
             else:
