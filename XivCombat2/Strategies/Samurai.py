@@ -119,6 +119,7 @@ def choose_kaeshi(data: LogicData):
         return 1
     return 3
 
+combos = {7477,7478,7479,7483}
 
 class SamuraiLogic(Strategy):
     name = "samuari_logic"
@@ -207,7 +208,7 @@ class SamuraiLogic(Strategy):
             if sen == kaeshi or sen == 3: return UseAbility(7494)
 
         # 明镜
-        if not data[7499] and 1299 in data.effects and not (sen == kaeshi or sen == 3):
+        if not data[7499] and 1299 in data.effects and not (sen == kaeshi or sen == 3) and data.combo_id not in combos:
             return UseAbility(7499)
 
         if kaeshi == 1:
