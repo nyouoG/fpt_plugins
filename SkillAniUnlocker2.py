@@ -1,14 +1,19 @@
-from ctypes import *
-
 from FFxivPythonTrigger import PluginBase, api
 from FFxivPythonTrigger.AddressManager import AddressManager
 from FFxivPythonTrigger.hook import Hook
-from FFxivPythonTrigger.memory import read_memory, scan_pattern, write_float
+from FFxivPythonTrigger.memory import *
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 
 command = "@sALock"
 sig = "4C 89 44 24 ? 53 56 57 41 54 41 57"
 sig_fix = "41 C7 45 08 ? ? ? ? EB ? 41 C7 45 08"
+sig_ninj_stiff = "E8 ? ? ? ? C6 83 ? ? ? ? ? EB ? 0F 57 C9"
+
+
+def find_ninj_stiff_addr(_=None):
+    a1 = scan_address(sig_ninj_stiff, cmd_len=5) + 0x1b
+    return read_uint(a1) + a1 + 4
+
 
 a4_struct = OffsetStruct({
     'action_id': (c_ushort, 28),
@@ -21,6 +26,9 @@ DEFAULT_HACK_LOCK = 0.15
 
 DEFAULT_FIX1 = 0.35
 DEFAULT_FIX2 = 0.5
+
+ninja_nop = bytearray(b"\x90" * 6)
+ninja_raw = bytearray(b"\xFF\x81\x2C\x05\x00\x00")
 
 
 class SkillAniUnlocker2(PluginBase):
@@ -48,8 +56,20 @@ class SkillAniUnlocker2(PluginBase):
         am = AddressManager(self.storage.data, self.logger)
         self.hook = ActionHook(am.get('addr', scan_pattern, sig))
         self.fix_addr = am.get('fix', scan_pattern, sig_fix)
+        self.ninja_stiff_addr = am.get('ninja_stiff', find_ninj_stiff_addr, None)
         self.storage.save()
+
+        if not self.is_ninja_patch():
+            global ninja_raw
+            ninja_raw = read_ubytes(self.ninja_stiff_addr, 6)
+
         api.command.register(command, self.process_command)
+
+    def is_ninja_patch(self):
+        return read_ubyte(self.ninja_stiff_addr) == 0x90
+
+    def patch_ninja(self, patch: bool):
+        write_ubytes(self.ninja_stiff_addr, ninja_nop if patch else ninja_raw)
 
     def _start(self):
         self.hook.install()
@@ -76,6 +96,17 @@ class SkillAniUnlocker2(PluginBase):
                         self.lock_time = DEFAULT_HACK_LOCK
                 elif args[0] == "dispatch" or args[0] == "d":
                     self.enable = False
+                elif args[0] == 'ninja':
+                    if len(args) > 1:
+                        if args[1] == "patch" or args[0] == "p":
+                            self.patch_ninja(True)
+                        elif args[1] == "dispatch" or args[0] == "d":
+                            self.patch_ninja(False)
+                        else:
+                            return "unknown arguments {}".format(args[1])
+                    else:
+                        self.patch_ninja(not self.is_ninja_patch())
+                    print(f"ninja patch:{self.is_ninja_patch()}")
                 else:
                     return "unknown arguments {}".format(args[0])
             else:
