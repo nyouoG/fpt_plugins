@@ -76,6 +76,7 @@ class SkillAniUnlocker2(PluginBase):
         self.hook.enable()
 
     def _onunload(self):
+        self.patch_ninja(False)
         api.command.unregister(command)
         self.hook.uninstall()
 
