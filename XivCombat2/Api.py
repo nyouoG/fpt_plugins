@@ -133,4 +133,8 @@ def get_hostiles():
 
 
 def get_coordinate():
-    return api.Coordinate()
+    try:
+        return api.Coordinate()
+    except AttributeNotFoundException:
+        return get_me_actor().pos
+
