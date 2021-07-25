@@ -92,5 +92,6 @@ def finish_retainer():
                                         response_statement=is_start_list_response)
 
 
-def close_list():
-    api.XivNetwork.send_messages([("EventFinish", bytearray(close_list_msg))])
+def close_list(is_work):
+    msg = ClientEventFinish(event_id=544, category=11,unk2=int(is_work))
+    api.XivNetwork.send_messages([("EventFinish", bytearray(msg))])

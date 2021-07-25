@@ -28,7 +28,7 @@ class SlaveDriver(PluginBase):
     def __init__(self):
         super().__init__()
         self.working = False
-        self.retainers_finished = list()
+        self.retainers_finished = set()
         self.register_event("network/recv_retainer_info", self.recv_retainer_info)
         api.XivNetwork.register_makeup("EventFinish", self.def_finish)
         api.XivNetwork.register_makeup("ClientTrigger", self.def_trigger)
@@ -46,7 +46,7 @@ class SlaveDriver(PluginBase):
         retainer = (msg.retainer_id, msg.server_id)
         if msg.adv_end_time and msg.adv_end_time < time.time():
             self.logger(msg.name,1)
-            self.retainers_finished.append(retainer)
+            self.retainers_finished.add(retainer)
         else:
             self.logger(msg.name, 0)
             if retainer in self.retainers_finished:
@@ -71,6 +71,7 @@ class SlaveDriver(PluginBase):
         time.sleep(0.05)
         cnt = 0
         while self.retainers_finished:
+            self.logger(self.retainers_finished)
             retainer_id, server_id = self.retainers_finished.pop()
             Network.start_retainer(retainer_id, server_id,bool(cnt))
             Network.confirm_retainer_hello()
@@ -84,5 +85,5 @@ class SlaveDriver(PluginBase):
             Network.ask_list()
             cnt+=1
             time.sleep(0.05)
-        Network.close_list()
+        Network.close_list(bool(cnt))
 
