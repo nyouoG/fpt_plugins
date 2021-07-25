@@ -47,8 +47,8 @@ def is_start_list_response(evt):
     return evt.raw_msg.category == 11 and evt.raw_msg.event_id == 544
 
 
-def start_list(target_id):
-    msg = ClientEventStart(target_id=target_id, event_id=544, category=11)
+def start_list(target_id,bell_type):
+    msg = ClientEventStart(target_id=target_id, event_id=544, category=11,unk0 = bell_type)
     return api.XivNetwork.send_messages([("EventStart", bytearray(msg))], response_opcode="EventPlay", response_statement=is_start_list_response)
 
 
