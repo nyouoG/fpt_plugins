@@ -22,6 +22,9 @@ skills = {
     61: SIDE,  # 双掌打，侧，武僧
     66: BACK,  # 破碎拳，背，武僧
     74: SIDE,  # 双龙脚，侧，武僧
+    2255: BACK,  # 旋风刃，背
+    2563: SIDE,  # 强甲破点突，侧
+    2258: BACK,  # 攻其不备，背
 }
 
 Vector3 = OffsetStruct({
