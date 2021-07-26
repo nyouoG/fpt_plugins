@@ -3,10 +3,10 @@ from threading import Lock
 from time import sleep
 from traceback import format_exc
 
-from FFxivPythonTrigger import PluginBase, api
+from FFxivPythonTrigger import PluginBase
 from FFxivPythonTrigger.AddressManager import AddressManager
 from FFxivPythonTrigger.hook import Hook
-from FFxivPythonTrigger.memory import scan_address, scan_pattern, read_ushort, read_uint
+from FFxivPythonTrigger.memory import scan_address, scan_pattern, read_ushort
 
 from .Networks import *
 from .Game import *
