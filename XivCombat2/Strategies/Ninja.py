@@ -114,6 +114,7 @@ combos = {
     'wind': c(JIN, CHI, TEN),
     'ground': c(JIN, TEN, CHI),
     'water': c(TEN, CHI, JIN),
+    'water_multi': c(CHI, TEN, JIN),
 }
 
 
@@ -150,16 +151,25 @@ class NinjaLogic(Strategy):
         self.combo = []
 
     def common(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
+        combo_use = data.config.custom_settings.setdefault('ninja_combo', '')
+        if combo_use in combos:
+            data.config.custom_settings['ninja_combo'] = ''
+            self.combo = combos[combo_use].copy()
         if self.combo:
             return UseAbility(self.combo.pop(0))
         elif 496 in data.effects:
             return UseAbility(2260)
 
     def global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
+
+        if data.config.query_skill:  # 队列技能
+            return data.config.get_query_skill()
+
         _res_lv = res_lv(data)
         cnt0 = count_enemy(data, 0)
         cnt2 = count_enemy(data, 2)
         use_res = _res_lv and (data[2258] > 45 or data.me.level < 45 or cnt0 > 2)
+
         if 497 in data.effects:
             if data.me.level >= 76:
                 self.combo = combos['fire'].copy() if cnt2 > 1 else combos['ice'].copy()
@@ -168,7 +178,7 @@ class NinjaLogic(Strategy):
             else:
                 self.combo = combos['thunder'].copy()
         elif 1186 in data.effects:
-            self.combo = combos['ground'].copy() if cnt2 > 1 and 501 not in data.effects else combos['water'].copy()
+            self.combo = combos['water'].copy() if cnt2 > 1 else combos['ground'].copy() if 501 not in data.effects else combos['water_multi'].copy()
         elif data[2259] <= 20:
             if data.me.level >= 45:
                 if not data.gauge.hutonMilliseconds:
@@ -197,6 +207,10 @@ class NinjaLogic(Strategy):
         return UseAbility(2240)
 
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
+
+        if data.config.query_ability:
+            return data.config.get_query_ability()
+
         _res_lv = res_lv(data)
         cnt0 = count_enemy(data, 0)
         if not _res_lv or not cnt0: return
@@ -213,9 +227,9 @@ class NinjaLogic(Strategy):
             return UseAbility(3566)
         if data.me.level >= 60 and 1955 in data.effects:
             return UseAbility(2246)
-        if not data[2264] and use_res:
+        if not data[2264] and use_res and 1186 not in data.effects:
             return UseAbility(2264)
-        if not data[7403] and use_res and 497 not in data.effects:
+        if not data[7403] and use_res and 497 not in data.effects and not data.is_moving:
             return UseAbility(7403)
         if not data[16489] and data[2258] > 20 and 507 in data.effects:
             return UseAbility(16489)
