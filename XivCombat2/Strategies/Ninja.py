@@ -157,9 +157,9 @@ class NinjaLogic(Strategy):
 
     def global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         _res_lv = res_lv(data)
-        use_res = _res_lv and (data[2258] > 45 or data.me.level < 45)
         cnt0 = count_enemy(data, 0)
         cnt2 = count_enemy(data, 2)
+        use_res = _res_lv and (data[2258] > 45 or data.me.level < 45 or cnt0 > 2)
         if 497 in data.effects:
             if data.me.level >= 76:
                 self.combo = combos['fire'].copy() if cnt2 > 1 else combos['ice'].copy()
@@ -174,7 +174,7 @@ class NinjaLogic(Strategy):
                 if not data.gauge.hutonMilliseconds:
                     self.combo = combos['wind'].copy()
                 elif _res_lv:
-                    if data[2258] < 15 and 507 not in data.effects:
+                    if data[2258] < 15 and 507 not in data.effects and cnt0 < 3:
                         self.combo = combos['water'].copy()
                     elif cnt0 > 2 and data.max_ttk > 15 and 501 not in data.effects:
                         self.combo = combos['ground'].copy()
@@ -189,7 +189,7 @@ class NinjaLogic(Strategy):
         if data.target_distance > 3: return
         if not data[2257] and use_res: return UseAbility(2257)
         if data.combo_id == 2242 and data.me.level >= 26:
-            if data.me.level >= 54 and data.gauge.hutonMilliseconds and data.gauge.hutonMilliseconds/1000 < 30:
+            if data.me.level >= 54 and data.gauge.hutonMilliseconds and data.gauge.hutonMilliseconds / 1000 < 30:
                 return UseAbility(3563)
             return UseAbility(2255)
         if data.combo_id == 2240 and data.me.level >= 4:
@@ -198,12 +198,13 @@ class NinjaLogic(Strategy):
 
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         _res_lv = res_lv(data)
-        if not _res_lv or not count_enemy(data, 0): return
-        use_res = _res_lv and (data[2258] > 45 or data.me.level < 45)
+        cnt0 = count_enemy(data, 0)
+        if not _res_lv or not cnt0: return
+        use_res = _res_lv and (data[2258] > 45 or data.me.level < 45 or cnt0 > 2)
         if not data[2248] and data.gauge.ninkiAmount <= 60:
             return UseAbility(2248)
         if data.gauge.ninkiAmount >= 50 and (use_res or data.gauge.ninkiAmount > (60 if not data[2248] else 80)):
-            return UseAbility(7402) if data.me.level >= 68 and count_enemy(data, 1) > 1 else UseAbility(7401)
+            return UseAbility(7402) if data.me.level >= 68 and count_enemy(data, 1) < 2 else UseAbility(7401)
         if not data[16493] and data.gauge.ninkiAmount >= 50:
             return UseAbility(16493)
         if not data[2258] and data[16493] and 507 in data.effects:
