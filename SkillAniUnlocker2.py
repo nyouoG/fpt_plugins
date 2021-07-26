@@ -74,6 +74,7 @@ class SkillAniUnlocker2(PluginBase):
     def _start(self):
         self.hook.install()
         self.hook.enable()
+        self.patch_ninja(True)
 
     def _onunload(self):
         self.patch_ninja(False)
