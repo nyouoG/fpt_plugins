@@ -1,6 +1,8 @@
 import math
+import time
 from functools import lru_cache
 
+from FFxivPythonTrigger.Logger import info
 from FFxivPythonTrigger.Utils import circle, sector, rotated_rect
 from ..Strategy import *
 from .. import Define
@@ -115,11 +117,13 @@ def choose_kaeshi(data: LogicData):
     bm = data.effects[1298].timer if 1298 in data.effects else 0
     bf = data.effects[1299].timer if 1299 in data.effects else 0
     t_effects = data.target.effects.get_dict(source=data.me.id)
-    if 1228 not in t_effects or t_effects[1228].timer < 7 and data.time_to_kill_target > 20 and min(bf, bm) > 20:
+    if (1228 not in t_effects or t_effects[1228].timer < 12) and data.time_to_kill_target > 40 and min(bf, bm) > 20:
         return 1
     return 3
 
-combos = {7477,7478,7479,7483}
+
+combos = {7477, 7478, 7479, 7483}
+
 
 class SamuraiLogic(Strategy):
     name = "samuari_logic"
@@ -127,6 +131,10 @@ class SamuraiLogic(Strategy):
     def __init__(self, config: 'CombatConfig'):
         super().__init__(config)
         self.gcd_total = 2.5
+        self.last_buff = 0
+
+    def has_buff(self, data: LogicData):
+        return time.time() < self.last_buff + self.gcd_total or 1229 in data.effects
 
     def global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         if data.gcd_total: self.gcd_total = data.gcd_total
@@ -140,9 +148,11 @@ class SamuraiLogic(Strategy):
         if bm and (sen == kaeshi or sen == 3):  # 居合
             if not data[16487] and data.gauge.meditation > 2 and res:
                 return UseAbility(16487)
-            if data.me.level < 52 or 1229 in data.effects:
+            if data.me.level < 52 or self.has_buff(data):
+                if kaeshi == 1: info("ttk", f"{int(data.time_to_kill_target // 60)}m{int(data.time_to_kill_target % 60)}s")
                 return None if data.is_moving else UseAbility(7867)
             elif data.me.level >= 52 and data.gauge.kenki >= 20:
+                self.last_buff = time.time()
                 return UseAbility(7494)
         if not data[16483] and data.gauge.prev_kaeshi_lv > 1 and res_lv(data):  # 回返
             if not data[16487] and data.gauge.meditation > 2 and res:
@@ -162,8 +172,12 @@ class SamuraiLogic(Strategy):
             if not data.gauge.snow and cnt2 < 3: return UseAbility(7480)
             return UseAbility((7482 if cnt1 < 3 else 7485) if bf >= bm else (7481 if cnt1 < 3 else 7484))
         if data.combo_id == 7478 and data.me.level >= 30:
+            if data.gauge.moon and not data[7495]:
+                return UseAbility(7495)
             return UseAbility(7481)
         if data.combo_id == 7479 and data.me.level >= 40:
+            if data.gauge.flower and not data[7495]:
+                return UseAbility(7495)
             return UseAbility(7482)
         if data.combo_id == 7477:
             if data.me.level >= 50 and bm > 8 and bf > 8 and not data.gauge.snow:
@@ -205,7 +219,9 @@ class SamuraiLogic(Strategy):
 
         # 回天
         if not data[7494] and 1229 not in data.effects and data.gauge.kenki >= 20 and not data.is_moving:
-            if sen == kaeshi or sen == 3: return UseAbility(7494)
+            if sen == kaeshi or sen == 3:
+                self.last_buff = time.time()
+                return UseAbility(7494)
 
         # 明镜
         if not data[7499] and 1299 in data.effects and not (sen == kaeshi or sen == 3) and data.combo_id not in combos:
@@ -231,3 +247,20 @@ class SamuraiLogic(Strategy):
 
         if not data[16487] and data.gauge.meditation > 2:
             return UseAbility(16487)
+        if sen and not data[7495]:
+            if data.combo_id == 7478 and data.gauge.moon or data.combo_id == 7479 and data.gauge.flower:
+                return UseAbility(7495)
+            if kaeshi != 1:
+                next_kenki_v3 = 0
+                if not data.gauge.moon: next_kenki_v3 += 3
+                if not data.gauge.flower: next_kenki_v3 += 3
+                if not data.gauge.snow: next_kenki_v3 += 2
+                if next_kenki_v3:
+                    if 1233 in data.effects: next_kenki_v3 -= data.effects[1233].param * 3
+                    if next_kenki_v3 <= 0:
+                        next_kenki_v3 = 0
+                    else:
+                        if data.combo_id == 7477 or data.combo_id == 7483: next_kenki_v3 -= 1
+                        if data.combo_id == 7478 or data.combo_id == 7479: next_kenki_v3 -= 2
+                if data[16483] and next_kenki_v3 and 0 <= data[16483] - (next_kenki_v3 * self.gcd_total) <= 4 * next_kenki_v3:
+                    return UseAbility(7495)

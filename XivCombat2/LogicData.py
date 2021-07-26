@@ -125,7 +125,8 @@ class LogicData(object):
         if t is None:
             return -1
         else:
-            return t.currentHP / max(self.tdps(actor_id), 1)
+            tdps = self.tdps(actor_id)
+            return (t.currentHP / tdps) if tdps else 0
 
     @cached_property
     def combo_state(self):
