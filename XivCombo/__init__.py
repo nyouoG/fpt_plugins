@@ -9,10 +9,10 @@ from ctypes import *
 from traceback import format_exc
 
 from FFxivPythonTrigger.memory import scan_pattern
-from . import DarkKnight, Machinist, Dancer, Gunbreaker, RedMage, Warrior, Bard,Paladin,Samurai
+from . import DarkKnight, Machinist, Dancer, Gunbreaker, RedMage, Warrior, Bard, Paladin, Samurai, Ninja
 
 combos = DarkKnight.combos | Machinist.combos | Dancer.combos | Gunbreaker.combos | RedMage.combos | Warrior.combos | Bard.combos | Paladin.combos
-combos |= Samurai.combos
+combos |= Samurai.combos | Ninja.combos
 
 # get_icon_sig = "48 89 ? ? ? 48 89 ? ? ? 48 89 ? ? ? 57 48 83 EC ? 8B DA BE" #cn.5.35
 get_icon_sig = "48 89 ? ? ? 48 89 ? ? ? 57 48 83 EC ? 8B DA BE"  # cn.5.40
