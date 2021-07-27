@@ -1,3 +1,6 @@
+import time
+from functools import lru_cache
+
 from FFxivPythonTrigger.Utils import circle
 from ..Strategy import *
 from .. import Define
@@ -72,8 +75,14 @@ from .. import Define
 501,"土遁之术","产生土属性攻击区域"
 497,"生杀予夺","可以发动忍术并且忍术的威力提升"
 1186,"天地人","可以连发忍术"
+1250,"真北","无视自身技能的方向要求"
 """
 
+"""
+ninja_huton_time 续风遁的时间 默认20  
+ninja_combo      手动要求打一个忍术（类型参考 combos）  
+check_position   是否检测身位 默认true  
+"""
 TEN = 3  # 天
 CHI = 2  # 地
 JIN = 1  # 人
@@ -143,12 +152,37 @@ def res_lv(data: LogicData) -> int:
     return int(data.max_ttk > 5)
 
 
+def get_setting_huton_time(data: LogicData):
+    return float(data.config.custom_settings.setdefault('ninja_huton_time', '20'))
+
+
 class NinjaLogic(Strategy):
     name = "ninja_logic"
+    fight_only = False
 
     def __init__(self, config: 'CombatConfig'):
         super().__init__(config)
+        self.effects_temp = dict()
         self.combo = []
+
+    def have_effect(self, data: LogicData, effect_id: int, allow_time=2):
+        return effect_id in data.effects or self.effects_temp.setdefault(effect_id, 0) > time.time() - allow_time
+
+    def set_effect(self, effect_id: int):
+        self.effects_temp[effect_id] = time.time()
+
+    @lru_cache
+    def check_position(self, data: LogicData, position: str):
+        if data.config.custom_settings.setdefault('check_position', 'true') == 'true':
+            return data.target.target_position(data.me) == position or self.have_effect(data, 1250)
+        return True
+
+    def can_ground(self, data: LogicData):
+        return not self.have_effect(data, 501, 5)
+
+    def get_ground(self):
+        self.set_effect(501)
+        return combos['ground'].copy()
 
     def common(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         combo_use = data.config.custom_settings.setdefault('ninja_combo', '')
@@ -161,9 +195,9 @@ class NinjaLogic(Strategy):
             return UseAbility(2260)
 
     def global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
-
         if data.config.query_skill:  # 队列技能
             return data.config.get_query_skill()
+        if not data.valid_enemies: return
 
         _res_lv = res_lv(data)
         cnt0 = count_enemy(data, 0)
@@ -174,20 +208,20 @@ class NinjaLogic(Strategy):
             if data.me.level >= 76:
                 self.combo = combos['fire'].copy() if cnt2 > 1 else combos['ice'].copy()
             elif cnt2 > 1:
-                self.combo = combos['ground'].copy() if data.max_ttk > 15 and 501 not in data.effects else combos['fire'].copy()
+                self.combo = self.get_ground() if data.max_ttk > 15 and self.can_ground(data) else combos['fire'].copy()
             else:
                 self.combo = combos['thunder'].copy()
         elif 1186 in data.effects:
-            self.combo = combos['water'].copy() if cnt2 > 1 else combos['ground'].copy() if 501 not in data.effects else combos['water_multi'].copy()
+            self.combo = combos['water'].copy() if cnt2 < 2 else self.get_ground() if self.can_ground(data) else combos['water_multi'].copy()
         elif data[2259] <= 20:
             if data.me.level >= 45:
                 if not data.gauge.hutonMilliseconds:
                     self.combo = combos['wind'].copy()
                 elif _res_lv:
-                    if data[2258] < 15 and 507 not in data.effects and cnt0 < 3:
+                    if data[2258] < 20 and 507 not in data.effects and cnt0 < 3 and (data[2259] < 5 or data[2258] < 5):
                         self.combo = combos['water'].copy()
-                    elif cnt0 > 2 and data.max_ttk > 15 and 501 not in data.effects:
-                        self.combo = combos['ground'].copy()
+                    elif cnt0 > 2 and data.max_ttk > 15 and self.can_ground(data):
+                        self.combo = self.get_ground()
             if not self.combo and _res_lv and (use_res or data[2259] < 5):
                 if data.me.level >= 35:
                     self.combo = combos['fire'].copy() if cnt2 > 1 else combos['thunder'].copy()
@@ -196,11 +230,22 @@ class NinjaLogic(Strategy):
         if self.combo: return UseAbility(self.combo.pop(0))
         if cnt0 > 2 and data.me.level >= 38:
             return UseAbility(16488 if data.combo_id == 2254 and data.me.level >= 52 else 2254)
-        if data.target_distance > 3: return
+        if data.target_distance > 3:
+            if _res_lv and data[2259] > 20:
+                if data.me.level >= 35:
+                    self.combo = combos['fire'].copy() if cnt2 > 1 else combos['thunder'].copy()
+                else:
+                    self.combo = combos['normal'].copy()
+            return UseAbility(self.combo.pop(0)) if self.combo else None
         if not data[2257] and use_res: return UseAbility(2257)
         if data.combo_id == 2242 and data.me.level >= 26:
-            if data.me.level >= 54 and data.gauge.hutonMilliseconds and data.gauge.hutonMilliseconds / 1000 < 30:
-                return UseAbility(3563)
+            if data.me.level >= 54:
+                huton_time = data.gauge.hutonMilliseconds / 1000
+                must_huton = huton_time and huton_time < get_setting_huton_time(data) and data.max_ttk > huton_time
+                if self.check_position(data, "BACK") and not must_huton:
+                    return UseAbility(2255)
+                elif self.check_position(data, "SIDE") or must_huton:
+                    return UseAbility(3563)
             return UseAbility(2255)
         if data.combo_id == 2240 and data.me.level >= 4:
             return UseAbility(2242)
@@ -210,26 +255,31 @@ class NinjaLogic(Strategy):
 
         if data.config.query_ability:
             return data.config.get_query_ability()
-
+        if not data.valid_enemies: return
         _res_lv = res_lv(data)
         cnt0 = count_enemy(data, 0)
-        if not _res_lv or not cnt0: return
+        if not _res_lv or data.target_distance > 25: return
         use_res = _res_lv and (data[2258] > 45 or data.me.level < 45 or cnt0 > 2)
-        if not data[2248] and data.gauge.ninkiAmount <= 60:
-            return UseAbility(2248)
-        if data.gauge.ninkiAmount >= 50 and (use_res or data.gauge.ninkiAmount > (60 if not data[2248] else 80)):
-            return UseAbility(7402) if data.me.level >= 68 and count_enemy(data, 1) < 2 else UseAbility(7401)
         if not data[16493] and data.gauge.ninkiAmount >= 50:
-            return UseAbility(16493)
-        if not data[2258] and data[16493] and 507 in data.effects:
-            return UseAbility(2258)
-        if not data[3566] and use_res:
-            return UseAbility(3566)
-        if data.me.level >= 60 and 1955 in data.effects:
-            return UseAbility(2246)
-        if not data[2264] and use_res and 1186 not in data.effects:
-            return UseAbility(2264)
-        if not data[7403] and use_res and 497 not in data.effects and not data.is_moving:
-            return UseAbility(7403)
-        if not data[16489] and data[2258] > 20 and 507 in data.effects:
-            return UseAbility(16489)
+            return UseAbility(16493)  # 分身
+        if data.target_distance <= 3:
+            if not data[2248] and data.gauge.ninkiAmount <= 60 and data[2258] < 5:
+                return UseAbility(2248)  # 夺取
+            if data.gauge.ninkiAmount >= 50 and (
+                    use_res or data.gauge.ninkiAmount > (50 if not data[16489] and 507 in data.effects else 60 if not data[2248] else 80)):
+                return UseAbility(7402) if data.me.level >= 68 and count_enemy(data, 1) < 2 else UseAbility(7401)  # 六道
+            if not data[2258] and data[16493] and 507 in data.effects:
+                if not self.check_position(data, "BACK") and data[7546] < 45:
+                    self.set_effect(1250)
+                    return UseAbility(7546)  # 真北
+                return UseAbility(2258)  # 背刺
+            if not data[3566] and use_res:
+                return UseAbility(3566)  # 梦幻三段
+            if data.me.level >= 60 and 1955 in data.effects:
+                return UseAbility(2246)  # 断绝
+        if not data[2264] and use_res:
+            return UseAbility(2264)  # 生杀
+        if not data[7403] and use_res and not data.is_moving:
+            return UseAbility(7403)  # 天地人
+        if not data[16489] and data[2258] > 20 and 507 in data.effects and data.gauge.ninkiAmount <= 50:
+            return UseAbility(16489)  # 命水
