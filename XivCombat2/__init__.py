@@ -96,7 +96,7 @@ class XivCombat2(PluginBase):
                         if self.is_working:
                             t = Api.get_current_target()
                             t_id = Api.get_me_actor().id if t is None else t.id
-                            if block.type == 1:
+                            if block.type == 1 and (not is_area_action(block.param) or self.config.auto_location):
                                 self.config.enable = False
                                 self.logger.debug(f"force action {block.param}")
                                 self.config.ability_cnt += 1
