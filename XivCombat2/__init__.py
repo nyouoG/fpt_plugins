@@ -98,14 +98,16 @@ class XivCombat2(PluginBase):
                             t_id = Api.get_me_actor().id if t is None else t.id
                             if block.type == 1 and (not is_area_action(block.param) or self.config.auto_location):
                                 self.config.enable = False
-                                self.logger.debug(f"force action {block.param}")
+                                if self.config.custom_settings.setdefault('debug_output', 'false') == 'true':
+                                    self.logger.debug(f"force action {block.param}")
                                 self.config.ability_cnt += 1
                                 use_ability(Strategy.UseAbility(block.param, t_id))
                                 self.config.enable = True
                                 return 1
                             elif block.type == 2 or block.type == 10:
                                 self.config.enable = False
-                                self.logger.debug(f"force {'item' if block.type == 2 else 'common'} {block.param}")
+                                if self.config.custom_settings.setdefault('debug_output', 'false') == 'true':
+                                    self.logger.debug(f"force {'item' if block.type == 2 else 'common'} {block.param}")
                                 Api.reset_ani_lock()
                                 Api.do_action(2 if block.type == 2 else 5, block.param, t_id)
                                 self.config.enable = True
@@ -225,11 +227,12 @@ class XivCombat2(PluginBase):
             if to_use.target_id is None:
                 target = data.target
                 to_use.target_id = data.me.id if target is None else target.id
-            if Api.get_current_target() is None:
+            if Api.get_current_target() is None and data.config.custom_settings.setdefault('auto_set_current_target', 'true') == 'true':
                 Api.set_current_target(Api.get_actor_by_id(to_use.target_id))
             if isinstance(to_use, Strategy.UseAbility) and Api.skill_queue_is_empty():
-                # actor=Api.get_actor_by_id(to_use.target_id)
-                # self.logger.debug(f"use:{action_sheet[to_use.ability_id]['Name']}({to_use.ability_id}) on {actor.Name}({hex(actor.id)[2:]}/{bin(actor.unitStatus1)}/{bin(actor._uint_0x98)}")
+                if data.config.custom_settings.setdefault('debug_output', 'false') == 'true':
+                    actor = Api.get_actor_by_id(to_use.target_id)
+                    self.logger.debug(f"use:{action_sheet[to_use.ability_id]['Name']}({to_use.ability_id}) on {actor.Name}({hex(actor.id)[2:]}")
                 use_ability(to_use)
             elif isinstance(to_use, Strategy.UseItem):  # 使用道具，应该只有食物或者爆发药吧？
                 use_item(to_use)
@@ -354,7 +357,7 @@ class XivCombat2(PluginBase):
                 return f"unknown args: [{args[1]}]"
         elif args[0] == "set":
             old = self.config.custom_settings.get(args[1])
-            new=' '.join(args[2:])
+            new = ' '.join(args[2:])
             self.config.custom_settings[args[1]] = new
             return f"{old} => {new}"
         elif args[0] == "auto_gcd":
