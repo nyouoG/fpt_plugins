@@ -62,6 +62,6 @@ def dot(me):
 
 
 combos = {
-    98: single,  # 直线射击：自动直线
-    3560: dot  # 伶牙俐齒：智能dot
+    'brd_single': (98, single),  # 直线射击：自动直线
+    'brd_dot': (3560, dot)  # 伶牙俐齒：智能dot
 }

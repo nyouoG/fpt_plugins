@@ -37,7 +37,8 @@ def multi(me):
     overheat = api.XivMemory.player_info.gauge.overheatMilliseconds
     return 16497 if overheat and lv >= 52 else 2870
 
+
 combos = {
-    2873: single,
-    2870: multi
+    'mch_single': (2873, single),
+    'mch_multi': (2870, multi)
 }

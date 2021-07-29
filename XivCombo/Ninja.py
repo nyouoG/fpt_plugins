@@ -101,8 +101,8 @@ def assassinate(me):
 
 
 combos = {
-    2255: single,  # 旋风刃：单体连
-    3563: single_armor_crush,  # 旋风刃：单体连
-    16488: multi,  # 八卦无刃杀：群体连
-    2246: assassinate,  # 断绝:三段-断绝
+    'nin_single': (2255, single),  # 旋风刃：单体连
+    'nin_single_armor_crush': (3563, single_armor_crush),  # 旋风刃：单体连
+    'nin_multi': (16488, multi),  # 八卦无刃杀：群体连
+    'nin_assassinate': (2246, assassinate),  # 断绝：三段-断绝
 }

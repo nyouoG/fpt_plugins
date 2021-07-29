@@ -54,7 +54,7 @@ def bullet(me):
 
 
 combos = {
-    16145: single,  # 迅连斩
-    16149: multi,  # 恶魔杀
-    16150: bullet,  # 凶禽爪
+    'gnb_single': (16145, single),  # 迅连斩
+    'gnb_multi': (16149, multi),  # 恶魔杀
+    'gnb_bullet': (16150, bullet),  # 凶禽爪
 }

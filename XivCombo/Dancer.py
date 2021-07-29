@@ -70,8 +70,8 @@ def skill(me):
 
 
 combos = {
-    15994: multi,  # 落刃雨
-    15990: single,  # 喷泉
-    15997: standard,  # 标准舞步
-    15998: skill,  # 技巧舞步
+    'dnc_multi': (15994, multi),  # 落刃雨
+    'dnc_single': (15990, single),  # 喷泉
+    'dnc_standard': (15997, standard), # 标准舞步
+    'dnc_skill': (15998, skill),  # 技巧舞步
 }

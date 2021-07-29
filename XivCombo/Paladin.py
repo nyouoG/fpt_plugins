@@ -63,6 +63,6 @@ def multi(me):
 
 
 combos = {
-    16460: single,  # 赎罪剑：单体连
-    16457: multi  # 日珥斩：群体连
+    'pld_single':(16460, single),  # 赎罪剑：单体连
+    'pld_multi':(16457, multi)  # 日珥斩：群体连
 }

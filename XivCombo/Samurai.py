@@ -88,7 +88,7 @@ def kaeshi(me):
 
 
 combos = {
-    7477: single,  # 刃风，单体
-    7483: multi,  # 风雅，群体
-    7867: kaeshi,  # 居合，燕回返
+    'sam_single': (7477, single),  # 刃风，单体
+    'sam_multi': (7483, multi),  # 风雅，群体
+    'sam_kaeshi': (7867, kaeshi),  # 居合，燕回返
 }

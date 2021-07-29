@@ -39,6 +39,6 @@ def multi_combo(me):
 
 
 combos = {
-    Souleater: single_combo,
-    StalwartSoul: multi_combo
+    'dk_single': (Souleater, single_combo),
+    'dk_multi': (StalwartSoul, multi_combo),
 }

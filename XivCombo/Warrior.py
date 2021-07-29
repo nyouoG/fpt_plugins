@@ -25,6 +25,6 @@ def multi(me):
 
 
 combos = {
-    42: single,  # 暴风斩
-    16462: multi,  # 秘银暴风
+    'war_single': (42, single),  # 暴风斩
+    'war_multi': (16462, multi),  # 秘银暴风
 }
