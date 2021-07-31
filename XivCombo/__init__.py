@@ -76,7 +76,7 @@ class XivCombo(PluginBase):
         temp_name = dict()
         data = self.storage.data.setdefault('enabled', dict())
         for key in self.all_combos.keys():
-            if data.setdefault(key, True):
+            if data.setdefault(key, False):
                 action_id, function = self.all_combos[key]
                 if action_id in temp:
                     self.logger.error(f"a combo with id:{action_id} name:{temp_name[action_id]} is already enabled, {key} will be disabled")
