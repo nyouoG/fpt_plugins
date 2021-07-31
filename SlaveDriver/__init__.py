@@ -4,6 +4,7 @@ from ctypes import *
 from FFxivPythonTrigger import PluginBase, api
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 from . import Network
+command = "@slave"
 
 bell_name = "传唤铃"
 
@@ -35,23 +36,24 @@ class SlaveDriver(PluginBase):
         self.register_event("network/recv_retainer_info", self.recv_retainer_info)
         api.XivNetwork.register_makeup("EventFinish", self.def_finish)
         api.XivNetwork.register_makeup("ClientTrigger", self.def_trigger)
+        api.command.register(command, self.process_command)
 
     def _start(self):
-        self.start_mission()
+        #self.start_mission()
+        pass
 
     def _onunload(self):
         api.XivNetwork.unregister_makeup("EventFinish", self.def_finish)
         api.XivNetwork.unregister_makeup("ClientTrigger", self.def_trigger)
+        api.command.unregister(command)
 
     def recv_retainer_info(self, event):
         msg = event.raw_msg
         if not msg.reserved: return
         retainer = (msg.retainer_id, msg.server_id)
         if msg.adv_end_time and msg.adv_end_time < time.time():
-            self.logger(msg.name, 1)
             self.retainers_finished.add(retainer)
         else:
-            self.logger(msg.name, 0)
             if retainer in self.retainers_finished:
                 self.retainers_finished.remove(retainer)
 
@@ -61,6 +63,12 @@ class SlaveDriver(PluginBase):
     def def_trigger(self, header, raw):
         return header, bytearray(Network.ClientTrigger()) if self.working else raw
 
+    def process_command(self, args):
+        if args[0] == "open":
+            Network.start_list(api.XivMemory.actor_table.get_me().id, 0)
+        elif args[0] == "collect":
+            self.start_mission()
+
     def start_mission(self):
         self.working = True
         try:
@@ -69,7 +77,7 @@ class SlaveDriver(PluginBase):
             self.working = False
 
     def _start_mission(self):
-        Network.start_list(*find_bell_id())
+        Network.start_list(api.XivMemory.actor_table.get_me().id, 0)
         Network.ask_list()
         time.sleep(0.05)
         cnt = 0
