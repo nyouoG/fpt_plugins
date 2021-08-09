@@ -128,7 +128,7 @@ class AFix(PluginBase):
         else:
             msg = PositionSetPack(r=new_r, pos=target, unk2=self.set_sig if stop else 0)
             code = "UpdatePositionHandler"
-        self.logger('goto', target, new_r, hex(msg.unk0), hex(msg.unk1), hex(msg.unk2))
+        self.logger.debug('goto', target, new_r, hex(msg.unk0), hex(msg.unk1), hex(msg.unk2))
         api.XivNetwork.send_messages([(code, bytearray(msg))], False)
 
     def coor_return(self, evt):
