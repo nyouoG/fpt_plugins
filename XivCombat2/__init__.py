@@ -29,6 +29,9 @@ def target_key(key: str):
         t = Api.get_focus_target()
     elif key == "[mo]":
         t = Api.get_mo_target()
+    elif key == "{mo}":
+        t = Api.get_mo_target()
+        if t is None: return None
     else:
         return key
     return t.id if t is not None else Api.get_me_actor().id
@@ -109,7 +112,7 @@ class XivCombat2(PluginBase):
                                 if self.config.custom_settings.setdefault('debug_output', 'false') == 'true':
                                     self.logger.debug(f"force {'item' if block.type == 2 else 'common'} {block.param}")
                                 Api.reset_ani_lock()
-                                Api.do_action(2 if block.type == 2 else 5, block.param, t_id)
+                                _self.original(a1, block_p)
                                 self.config.enable = True
                                 return 1
                         elif self.config.auto_location and block.type == 1 and is_area_action(block.param):
@@ -296,7 +299,9 @@ class XivCombat2(PluginBase):
                 t = Api.get_current_target()
                 target = Api.get_me_actor().id if t is None else t.id
             else:
-                target = int(target_key(args[3]))
+                t_key = target_key(args[3])
+                if t_key is None: return
+                target = int(t_key)
             a = Strategy.UseAbility(int(args[2]), target)
             if args[1] == "ability" or args[1] == "a":
                 self.config.query_ability = a

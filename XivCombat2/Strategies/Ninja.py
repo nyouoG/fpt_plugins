@@ -185,10 +185,12 @@ class NinjaLogic(Strategy):
         return combos['ground'].copy()
 
     def common(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
-        combo_use = data.config.custom_settings.setdefault('ninja_combo', '')
-        if combo_use in combos:
-            data.config.custom_settings['ninja_combo'] = ''
-            self.combo = combos[combo_use].copy()
+        if data.gcd < 0.3 and not self.combo:
+            combo_use = data.config.custom_settings.setdefault('ninja_combo', '')
+            if combo_use in combos:
+                if combo_use == "ground": self.set_effect(501)
+                data.config.custom_settings['ninja_combo'] = ''
+                self.combo = combos[combo_use].copy()
         if self.combo:
             return UseAbility(self.combo.pop(0))
         elif 496 in data.effects:
@@ -218,11 +220,11 @@ class NinjaLogic(Strategy):
                 if not data.gauge.hutonMilliseconds:
                     self.combo = combos['wind'].copy()
                 elif _res_lv:
-                    if data[2258] < 20 and 507 not in data.effects and cnt0 < 3 and (data[2259] < 5 or data[2258] < 5):
+                    if data[2258] < 20 and 507 not in data.effects and cnt0 < 3 and (data[2259] < 5 or data[2258] < 5 or data.target_distance > 6):
                         self.combo = combos['water'].copy()
                     elif cnt0 > 2 and data.max_ttk > 15 and self.can_ground(data):
                         self.combo = self.get_ground()
-            if not self.combo and _res_lv and (use_res or data[2259] < 5):
+            if not self.combo and _res_lv and (use_res or data[2259] < 5 or data.target_distance > 6):
                 if data.me.level >= 35:
                     self.combo = combos['fire'].copy() if cnt2 > 1 else combos['thunder'].copy()
                 else:
@@ -230,22 +232,24 @@ class NinjaLogic(Strategy):
         if self.combo: return UseAbility(self.combo.pop(0))
         if cnt0 > 2 and data.me.level >= 38:
             return UseAbility(16488 if data.combo_id == 2254 and data.me.level >= 52 else 2254)
-        if data.target_distance > 3:
-            if _res_lv and data[2259] > 20:
-                if data.me.level >= 35:
-                    self.combo = combos['fire'].copy() if cnt2 > 1 else combos['thunder'].copy()
-                else:
-                    self.combo = combos['normal'].copy()
-            return UseAbility(self.combo.pop(0)) if self.combo else None
+        if data.target_distance > 3: return
         if not data[2257] and use_res: return UseAbility(2257)
         if data.combo_id == 2242 and data.me.level >= 26:
+            is_side = self.check_position(data, "SIDE")
+            is_back = self.check_position(data, "BACK")
             if data.me.level >= 54:
                 huton_time = data.gauge.hutonMilliseconds / 1000
                 must_huton = huton_time and huton_time < get_setting_huton_time(data) and data.max_ttk > huton_time
-                if self.check_position(data, "BACK") and not must_huton:
+                if is_back and not must_huton:
                     return UseAbility(2255)
-                elif self.check_position(data, "SIDE") or must_huton:
+                elif is_side or must_huton:
+                    if not is_side and data[7546] <= 45 and data[7546] - data[2258] <= 0:
+                        self.set_effect(1250)
+                        return UseAbility(7546)  # 真北
                     return UseAbility(3563)
+            if not is_back and data[7546] <= 45 and (data[7546] - data[2258] <= 0 or data.me.level < 45):
+                self.set_effect(1250)
+                return UseAbility(7546)  # 真北
             return UseAbility(2255)
         if data.combo_id == 2240 and data.me.level >= 4:
             return UseAbility(2242)
