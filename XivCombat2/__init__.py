@@ -315,7 +315,7 @@ class XivCombat2(PluginBase):
                 return f"unknown args: [{args[1]}]"
         elif args[0] == "skill_disable":
             s = int(args[1])
-            if len(args < 3):
+            if len(args) < 3:
                 if s in self.config.skill_disable:
                     try:
                         self.config.skill_disable.remove(s)
