@@ -63,6 +63,7 @@ class MachinistLogic(Strategy):
             return
         if data[2876] or not res_use:
             if data.gcd >= data[16498]: return UseAbility(16498 if single or data.me.level < 72 else 16498)
+        if data[2876] or not res_use or data.me.level < 76:
             if data.gcd >= data[hsid]: return UseAbility(hsid)
         if single or data.target_distance > 12 or data.me.level < 18:
             if data.gauge.overheatMilliseconds and data.me.level >= 35:
@@ -92,7 +93,7 @@ class MachinistLogic(Strategy):
             if data[16498] < data.gcd:
                 data.reset_cd(16498)
                 return UseAbility(2876)
-            elif data[hsid] < data.gcd:
+            elif data[hsid] < data.gcd and data.me.level > 76:
                 data.reset_cd(hsid)
                 return UseAbility(2876)
         can_over = not data.gauge.overheatMilliseconds and data[16498] > 8 and data[hsid] > 8 and data.combo_remain > 11 and data.gauge.heat >= 50
