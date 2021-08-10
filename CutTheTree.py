@@ -5,11 +5,14 @@ from FFxivPythonTrigger.memory.StructFactory import OffsetStruct, EnumStruct
 
 command = "@CTT"
 
-recv_opcode = 0x360  # cn5.45
-send_opcode = 0x39d  # cn5.45
+recv_opcode = 0x335  # cn5.5
+send_opcode = 0x105  # cn5.5
 
-send_event_start_opcode = 0x3c3  # cn5.45
-send_event_finish_opcode = 0x20B  # cn5.45
+# recv_opcode = 0x360  # cn5.45
+# send_opcode = 0x39d  # cn5.45
+#
+# send_event_start_opcode = 0x3c3  # cn5.45
+# send_event_finish_opcode = 0x20B  # cn5.45
 
 # recv_opcode = 789  # cn5.41
 # send_opcode = 843  # cn5.41
@@ -164,7 +167,7 @@ class CutTheTree(PluginBase):
                 self.game_cnt += 1
                 self.logger.debug(f"start game #{self.game_cnt}")
                 start_msg.target_id = target.id
-                api.XivNetwork.send_messages([(send_event_start_opcode, bytearray(start_msg))])
+                api.XivNetwork.send_messages([("EventStart", bytearray(start_msg))])
                 self.send(send_start_msg)
                 self.send(send_difficulty_msg)
 
@@ -185,7 +188,7 @@ class CutTheTree(PluginBase):
             else:
                 self.logger.debug(f"finish game #{self.game_cnt}")
                 sleep(3)
-                api.XivNetwork.send_messages([(send_event_finish_opcode, bytearray(finish_msg))])
+                api.XivNetwork.send_messages([("EventFinish", bytearray(finish_msg))])
                 self.start_new()
 
     def send_work(self, event):
