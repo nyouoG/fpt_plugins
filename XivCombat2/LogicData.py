@@ -80,11 +80,13 @@ class LogicData(object):
 
     @cached_property
     def valid_party(self):
-        return [member.actor for member in Api.get_party_list() if member.actor is not None and member.actor.can_select]
+        ids = (member.id for member in Api.get_party_list() if member.id and member.id != 0xe0000000)
+        return [actor for actor in Api.get_actors_by_id(*ids) if actor.can_select]
 
     @cached_property
     def valid_alliance(self):
-        return [member.actor for member in Api.get_party_list(alliance_all=True) if member.actor is not None and member.actor.can_select]
+        ids = (member.id for member in Api.get_party_list(alliance_all=True) if member.id and member.id != 0xe0000000)
+        return [actor for actor in Api.get_actors_by_id(*ids) if actor.can_select]
 
     @cached_property
     def valid_players(self):
@@ -126,7 +128,7 @@ class LogicData(object):
             return -1
         else:
             tdps = self.tdps(actor_id)
-            return (t.currentHP / tdps) if tdps else 0
+            return (t.currentHP / tdps) if tdps else 1e+99
 
     @cached_property
     def combo_state(self):

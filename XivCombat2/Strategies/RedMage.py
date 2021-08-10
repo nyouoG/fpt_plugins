@@ -1,6 +1,5 @@
 from math import radians
 
-from FFxivPythonTrigger.Logger import debug
 from FFxivPythonTrigger.Utils import sector, circle
 from ..Strategy import *
 from .. import Define
@@ -147,7 +146,7 @@ class RDMLogic(Strategy):
         cnt = count_enemy(data, 0)
         if has_swift:  # 有瞬发
             if swift_res_target is not None and data.me.currentMP >= 2400:
-                debug('swift_res',swift_res_target.Name, hex(swift_res_target.id))
+                debug('swift_res', swift_res_target.Name, hex(swift_res_target.id))
                 return UseAbility(7523, swift_res_target.id)
             if lv >= 15 and cnt > (1 if lv >= 66 else 2):
                 return UseAbility(7509)  # aoe 散碎、冲击
@@ -171,7 +170,8 @@ class RDMLogic(Strategy):
 
         if data.target is None or not data.valid_enemies: return
         min_mana = min(data.gauge.white_mana, data.gauge.black_mana)
-        if res_lv(data) and data.target_distance:
+
+        if res_lv(data) and data.target_distance < 20:
             if not data[7521] and 40 <= min_mana <= 50: return UseAbility(7521)  # 倍增
             if not data[7518] and min_mana < 60: return UseAbility(7518)  # 促进
             if not data[7520] and min_mana >= (50 if count_enemy(data, 2) < 3 else 20): return UseAbility(7520)  # 鼓励
