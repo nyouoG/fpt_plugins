@@ -4,9 +4,17 @@ from FFxivPythonTrigger import api
 
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 
-ListReadyOpcode = 262
-AdventureConfirmedOpcode = 842
+# cn5.5
+ListReadyOpcode = 282
+AdventureConfirmedOpcode = 514
 
+# # cn5.45
+# ListReadyOpcode = 262
+# AdventureConfirmedOpcode = 842
+
+# length
+# ListReadyOpcode len:24
+# AdventureConfirmedOpcode len:96
 ClientEventStart = OffsetStruct({
     'target_id': c_uint,
     'unk0': c_uint,
@@ -47,8 +55,8 @@ def is_start_list_response(evt):
     return evt.raw_msg.category == 11 and evt.raw_msg.event_id == 544
 
 
-def start_list(target_id,bell_type):
-    msg = ClientEventStart(target_id=target_id, event_id=544, category=11,unk0 = bell_type)
+def start_list(target_id, bell_type):
+    msg = ClientEventStart(target_id=target_id, event_id=544, category=11, unk0=bell_type)
     return api.XivNetwork.send_messages([("EventStart", bytearray(msg))], response_opcode="EventPlay", response_statement=is_start_list_response)
 
 
@@ -93,5 +101,5 @@ def finish_retainer():
 
 
 def close_list(is_work):
-    msg = ClientEventFinish(event_id=544, category=11,unk2=int(is_work))
+    msg = ClientEventFinish(event_id=544, category=11, unk2=int(is_work))
     api.XivNetwork.send_messages([("EventFinish", bytearray(msg))])
