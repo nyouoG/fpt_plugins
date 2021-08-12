@@ -173,7 +173,7 @@ class NinjaLogic(Strategy):
 
     @lru_cache
     def check_position(self, data: LogicData, position: str):
-        if data.config.custom_settings.setdefault('check_position', 'true') == 'true':
+        if data.target.is_positional and data.config.custom_settings.setdefault('check_position', 'true') == 'true':
             return data.target.target_position(data.me) == position or self.have_effect(data, 1250)
         return True
 

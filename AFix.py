@@ -153,7 +153,7 @@ class AFix(PluginBase):
         d = ActionSend.from_buffer(raw)
         if self._enable and d.skill_id in skills and 1250 not in api.XivMemory.actor_table.get_me().effects.get_dict():
             t = api.XivMemory.actor_table.get_actor_by_id(d.target_id)
-            if t is not None:
+            if t is not None and t.is_positional:
                 xy = get_nearest(api.Coordinate(), t, skills[d.skill_id])
                 if xy is not None:
                     new_r = api.Coordinate().r
