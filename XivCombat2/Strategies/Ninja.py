@@ -220,7 +220,7 @@ class NinjaLogic(Strategy):
                 if not data.gauge.hutonMilliseconds:
                     self.combo = combos['wind'].copy()
                 elif _res_lv:
-                    if data[2258] < 20 and 507 not in data.effects and cnt0 < 3 and (data[2259] < 5 or data[2258] < 5 or data.target_distance > 6):
+                    if (data[2258] < 20 or not data[16489]) and 507 not in data.effects and (data[2259] < 5 or data[2258] < 5 or data.target_distance > 6):
                         self.combo = combos['water'].copy()
                     elif cnt0 > 2 and data.max_ttk > 15 and self.can_ground(data):
                         self.combo = self.get_ground()

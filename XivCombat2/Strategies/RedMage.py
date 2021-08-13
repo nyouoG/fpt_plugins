@@ -136,7 +136,7 @@ class RDMLogic(Strategy):
             return UseAbility(16530)
         "处理魔连击结束"
 
-        if min_mana >= 5:  # 续斩处理溢出魔元、走位
+        if min_mana >= 5 and data.me.level >= 76:  # 续斩处理溢出魔元、走位
             if max_mana >= (90 if res else 97) and dis > 10: return UseAbility(16529)
             # if res and data.is_moving and not has_swift:
             #     if data.gcd:
