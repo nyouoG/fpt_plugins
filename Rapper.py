@@ -27,7 +27,7 @@ class Rapper(PluginBase):
             restype = c_float
 
             def hook_function(_self, *args):
-                return max(int(_self.original(*args) - self.reduce), 0)
+                return max(_self.original(*args) - self.reduce, 0.)
 
         self.reduce = 0
         am = AddressManager(self.storage.data, self.logger)
