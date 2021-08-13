@@ -2,7 +2,7 @@ import time
 from ctypes import *
 from functools import cache
 
-from FFxivPythonTrigger import PluginBase, api
+from FFxivPythonTrigger import PluginBase, api,frame_inject
 from FFxivPythonTrigger.SaintCoinach import realm
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 from . import Network
@@ -49,6 +49,14 @@ class SlaveDriver(PluginBase):
         api.XivNetwork.register_makeup("EventFinish", self.def_finish)
         api.XivNetwork.register_makeup("ClientTrigger", self.def_trigger)
         api.command.register(command, self.process_command)
+        frame_inject.register_continue_call(self.frame_work)
+        self.next_collect = 0
+        self.auto = False
+
+    def frame_work(self):
+        if self.auto and time.time() > self.next_collect:
+            self.next_collect = 1e+99
+            self.create_mission(self.start_mission, limit_sec=0)
 
     def _start(self):
         # self.start_mission()
@@ -57,6 +65,7 @@ class SlaveDriver(PluginBase):
     def _onunload(self):
         api.XivNetwork.unregister_makeup("EventFinish", self.def_finish)
         api.XivNetwork.unregister_makeup("ClientTrigger", self.def_trigger)
+        frame_inject.unregister_continue_call(self.frame_work)
         api.command.unregister(command)
 
     def recv_retainer_info(self, event):
@@ -77,6 +86,9 @@ class SlaveDriver(PluginBase):
             self.start_mission()
         elif args[0] == "close":
             Network.close_list(1)
+        elif args[0] == "auto":
+            self.auto = not self.auto
+            self.logger("auto:",self.auto)
 
     def start_mission(self):
         self.working = True
@@ -134,3 +146,7 @@ class SlaveDriver(PluginBase):
             cnt += 1
             time.sleep(0.05)
         Network.close_list(bool(cnt))
+        t = [msg.adv_end_time for msg in self.retainers.values() if msg.adv_end_time]
+        self.next_collect = min(t) + 20
+        dif = self.next_collect-time.time()
+        self.logger(f"next collect after  {dif // 3600:.0f}h {dif % 3600 // 60:.0f}m {dif % 60:.0f}s")
