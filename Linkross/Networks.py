@@ -1,18 +1,34 @@
 from FFxivPythonTrigger import api
 from FFxivPythonTrigger.memory.StructFactory import *
 
-send_place_card_opcode = 246
-send_card_choose_opcode = 512
-recv_place_card_opcode = 225
-recv_duel_action_finish_opcode = 714
-recv_duel_desc_opcode = 259
-recv_game_data_opcode = 822
+# cn5.5
+send_place_card_opcode = 523
+send_card_choose_opcode = 626
+recv_place_card_opcode = 630
+recv_duel_action_finish_opcode = 364
+recv_duel_desc_opcode = 382
+recv_game_data_opcode = 824
+
+# # cn5.45
+# send_place_card_opcode = 246
+# send_card_choose_opcode = 512
+# recv_place_card_opcode = 225
+# recv_duel_action_finish_opcode = 714
+# recv_duel_desc_opcode = 259
+# recv_game_data_opcode = 822
+#
+# send_place_card_opcode len 24
+# send_card_choose_opcode len 40
+# recv_place_card_opcode  len 24
+# recv_duel_action_finish_opcode len 16
+# recv_duel_desc_opcode  len 40
+# recv_game_data_opcode len 72
 
 send_place_card_pack = OffsetStruct({
     'event_id': (c_ushort, 0x0),
     'category': (c_ushort, 0x2),
-    'unk0':(c_uint,0x4),
-    'unk1':(c_uint,0x8),
+    'unk0': (c_uint, 0x4),
+    'unk1': (c_uint, 0x8),
     'round': (c_uint, 0xc),
     'hand_id': (c_uint, 0x10),
     'block_id': (c_uint, 0x14),
@@ -101,13 +117,14 @@ class recv_game_data_pack(OffsetStruct({
 
 def game_start(event_id, b_npc_id):
     msg = send_client_trigger(category=0x23, event_id=event_id, target_bnpc_id=b_npc_id, unk0=0x32f, unk1=0x1)
-    api.XivNetwork.send_messages([("ClientTrigger", bytearray(msg))])
+    api.XivNetwork.send_messages([("ClientTrigger", bytearray(msg))], response_opcode=recv_duel_action_finish_opcode)
 
 
 def end_game(event_id):
     finish_massage = send_event_action(category=0x23, event_id=event_id, param3=1, param4=6)
     finish_massage.param8 = 189
     api.XivNetwork.send_messages([("EventAction", bytearray(finish_massage))])
+
 
 def talk_finish(event_id):
     msg = send_event_finish(category=0x9, event_id=event_id)
@@ -116,31 +133,32 @@ def talk_finish(event_id):
 
 def game_finish(event_id):
     msg = send_event_finish(category=0x23, event_id=event_id)
-    api.XivNetwork.send_messages([("EventFinish", bytearray(msg))])
+    api.XivNetwork.send_messages([("EventFinish", bytearray(msg))],response_opcode="EventFinish")
 
 
 def place_card(event_id, game_round, hand_id=5, block_id=9):
     msg = send_place_card_pack(category=0x23, event_id=event_id, round=game_round, hand_id=hand_id, block_id=block_id)
-    msg.unk0=0x4000000
-    msg.unk1=0x5
-    api.XivNetwork.send_messages([(send_place_card_opcode, bytearray(msg))])
-
+    msg.unk0 = 0x4000000
+    msg.unk1 = 0x5
+    res = api.XivNetwork.send_messages([(send_place_card_opcode, bytearray(msg))], response_opcode=recv_place_card_opcode)
+    return recv_place_card_pack.from_buffer(res.raw_msg)
 
 def choose_cards(event_id, card1, card2, card3, card4, card5):
     deck_choose = send_card_choose_pack(category=0x23, event_id=event_id, cards=(card1, card2, card3, card4, card5))
     deck_choose.unk0 = 0x6000000
     deck_choose.unk1 = 0x4
-    api.XivNetwork.send_messages([(send_card_choose_opcode, bytearray(deck_choose))])
+    res = api.XivNetwork.send_messages([(send_card_choose_opcode, bytearray(deck_choose))], response_opcode=recv_game_data_opcode)
+    return recv_game_data_pack.from_buffer(res.raw_msg)
 
 
 def confirm_rule_1(event_id):
     continue_msg = send_event_action(category=0x23, event_id=event_id, param3=2, param4=2)
     continue_msg.param8 = 1
-    api.XivNetwork.send_messages([("EventAction", bytearray(continue_msg))])
+    api.XivNetwork.send_messages([("EventAction", bytearray(continue_msg))], response_opcode=recv_duel_action_finish_opcode)
 
 
 def confirm_rule_2(event_id):
     continue_msg = send_event_action(category=0x23, event_id=event_id, param3=1, param4=3)
     continue_msg.param8 = 51
     continue_msg.param9 = 2
-    api.XivNetwork.send_messages([("EventAction", bytearray(continue_msg))])
+    api.XivNetwork.send_messages([("EventAction", bytearray(continue_msg))], response_opcode=recv_duel_action_finish_opcode)

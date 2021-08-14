@@ -24,11 +24,12 @@ from FFxivPythonTrigger.SaintCoinach import realm
 
 card_sheet = realm.game_data.get_sheet('TripleTriadCardResident')
 card_desc_sheet = realm.game_data.get_sheet('TripleTriadCard')
+card_type_sheet = realm.game_data.get_sheet('TripleTriadCardType')
 rule_sheet = realm.game_data.get_sheet('TripleTriadRule')
 enpc_sheet = realm.game_data.get_sheet('ENpcBase')
 card_event_sheet = realm.game_data.get_sheet("TripleTriad")
 
-MAX_CARD_ID = 316
+MAX_CARD_ID = max([r.key for r in card_sheet])
 
 NONE = 0
 BLUE = 1

@@ -2,11 +2,12 @@ from .Game import *
 
 
 class SolverBase(object):
-    def __init__(self, card_event: CardEvent, available_cards: list[Card]):
+    def __init__(self, card_event: CardEvent, available_cards: list[Card], current_rules: set[int]):
         self.card_event = card_event
         self.available_cards = available_cards
+        self.current_rules = current_rules
 
-    def suitable(self, current_rules: set[int]) -> bool:
+    def suitable(self) -> bool:
         """
         call when current rules are loaded
         :param current_rules: load rules
@@ -21,7 +22,7 @@ class SolverBase(object):
         """
         pass
 
-    def solve(self,game:Game)->tuple[int,int]:
+    def solve(self, game: Game) -> tuple[int, int]:
         """
         call when its your round
         :param game: the current game state

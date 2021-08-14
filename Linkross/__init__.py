@@ -1,5 +1,4 @@
 import os
-from threading import Lock
 from time import sleep
 from traceback import format_exc
 
@@ -7,6 +6,7 @@ from FFxivPythonTrigger import PluginBase
 from FFxivPythonTrigger.AddressManager import AddressManager
 from FFxivPythonTrigger.hook import Hook
 from FFxivPythonTrigger.memory import scan_address, scan_pattern, read_ushort
+from FFxivPythonTrigger.Utils import wait_until
 
 from .Networks import *
 from .Game import *
@@ -51,7 +51,7 @@ class Linkross(PluginBase):
 
             def hook_function(_self, a1, a2):
                 r = _self.original(a1, a2)
-                if self.stage and read_ushort(a2 + 10) == 0x9:
+                if self.card_event and read_ushort(a2 + 10) == 0x9:
                     talk_finish(read_ushort(a2 + 8))
                 return r
 
@@ -60,34 +60,14 @@ class Linkross(PluginBase):
         self._card_exist_func = card_exist_func(am.get('card_check_func', scan_pattern, card_check_func_sig))
         self.talk_hook = TalkHook(am.get('talk_hook', scan_address, talk_hook_sig, cmd_len=5))
         self.storage.save()
-        self.register_event(f"network/recv/{recv_game_data_opcode}", self.start_game)
-        self.register_event(f"network/recv/{recv_place_card_opcode}", self.place_card)
         self.register_event(f"network/recv/{recv_duel_desc_opcode}", self.init_rules)
-        self.register_event(f"network/recv/{recv_duel_action_finish_opcode}", self.duel_next_step)
-        self.register_event(f"network/recv_event_finish", self.reset, 0)
         self.solvers = [Sample.SampleSolver]
         self.solver_used = None
-        self.game = None
         self.card_event = None
-        self.stage = 0
         self.available_cards = []
         self.auto_next = 0
-        self.mode = FOCUS
-        self.lock = Lock()
         self.refresh_available_cards()
         api.command.register(command, self.process_command_entrance)
-
-    def reset(self, event):
-        if event.raw_msg.category == 0x23:
-            self.auto_next -= 1
-            self.logger("reset!")
-            self.solver_used = None
-            self.game = None
-            self.card_event = None
-            self.stage = 0
-            if self.auto_next:
-                sleep(1)
-                self.start_new()
 
     def refresh_available_cards(self):
         self.available_cards = [Card(row.key) for row in card_sheet if row.key and self.card_exist(row.key)]
@@ -105,82 +85,17 @@ class Linkross(PluginBase):
         self.talk_hook.uninstall()
 
     def init_rules(self, event):
-        with self.lock:
-            data = recv_duel_desc_pack.from_buffer(event.raw_msg)
-            if data.category != 0x23 or self.stage != CONFIRM_TALK: return
-            self.stage += 0.5
-            # self.logger(f"{self.card_event}\ncurrent rules: {','.join([rule_sheet[rule]['Name'] for rule in data.rules if rule])}")
-            rules = set(data.rules)
-            self.solver_used = None
-            for solver_class in self.solvers:
-                solver = solver_class(self.card_event, self.available_cards)
-                if solver.suitable(rules):
-                    self.solver_used = solver
-                    break
-            self.stage = CONFIRM_RULE
-
-    def duel_next_step(self, event):
-        with self.lock:
-            if self.stage == CONFIRM_RULE:
-                if self.solver_used is None: return
-                confirm_rule_1(self.card_event.event_id)
-                self.stage += 1
-            elif self.stage == CONFIRM_RULE + 1:
-                confirm_rule_2(self.card_event.event_id)
-                self.stage += 1
-            elif self.stage == CONFIRM_DECK:
-                deck = self.solver_used.get_deck()
-                self.logger(deck)
-                choose_cards(self.card_event.event_id, *deck)
-                self.stage += 1
-
-    def start_game(self, event):
-        data = recv_game_data_pack.from_buffer(event.raw_msg)
-        if data.category != 35: return
-        self.game = Game(BLUE if data.me_first else RED, data.my_card, data.enemy_card, data.rules[:])
-        # self.logger(self.game)
-        if not self.stage: return
-        if data.me_first:
-            place_card(self.card_event.event_id, self.game.round, *self.solver_used.solve(self.game))
-        else:
-            place_card(self.card_event.event_id, self.game.round)
-
-    def place_card(self, event):
-        data = recv_place_card_pack.from_buffer(event.raw_msg)
-        if data.category != 35: return
-        if self.game is not None:
-            self.game.place_card(data.block_id, data.hand_id, data.card_id)
-            # self.logger(self.game)
-            win = self.game.win()
-            if win is not None:
-                if win == BLUE:
-                    self.logger("Blue win!")
-                elif win == RED:
-                    self.logger("Red win!")
-                else:
-                    self.logger("Draw!")
-                self.game = None
-                if self.stage > CONFIRM_DECK:
-                    self.auto_next += 1
-                    end_game(self.card_event.event_id)
-                    game_finish(self.card_event.event_id)
-            elif self.game.current_player == BLUE and self.stage > CONFIRM_DECK:
-                place_card(self.card_event.event_id, self.game.round, *self.solver_used.solve(self.game))
-            elif self.game.current_player == RED and self.stage > CONFIRM_DECK:
-                place_card(self.card_event.event_id, self.game.round)
-
-    def start_new(self):
-        if self.stage:
-            raise Exception(f"current stage: {self.stage}")
-        if self.mode == FOCUS:
-            target = api.XivMemory.targets.focus
-        elif self.mode == CURRENT:
-            target = api.XivMemory.targets.current
-        else:
-            raise Exception(f"Unknown mode: {self.mode}")
-        self.card_event = CardEvent.from_actor(target)
-        game_start(self.card_event.event_id, target.bNpcId)
-        self.stage = CONFIRM_TALK
+        data = recv_duel_desc_pack.from_buffer(event.raw_msg)
+        if data.category != 0x23: return
+        # self.logger(f"{self.card_event}\ncurrent rules: {','.join([rule_sheet[rule]['Name'] for rule in data.rules if rule])}")
+        rules = set(data.rules)
+        self.solver_used = None
+        for solver_class in self.solvers:
+            solver = solver_class(self.card_event, self.available_cards, rules)
+            if solver.suitable():
+                self.solver_used = solver
+                return
+        self.solver_used = "No Solver"
 
     def process_command_entrance(self, args):
         try:
@@ -189,13 +104,44 @@ class Linkross(PluginBase):
         except:
             self.logger.error(format_exc())
 
+    def _play_game(self, mode):
+        target = api.XivMemory.targets.focus if mode == FOCUS else api.XivMemory.targets.current if mode == CURRENT else None
+        if target is None: raise Exception(f"Unknown mode: {mode}")
+        self.card_event = CardEvent.from_actor(target)
+        event_id = self.card_event.event_id
+        game_start(event_id, target.bNpcId)
+        solver = wait_until(lambda: self.solver_used, timeout=0.5)
+        if not isinstance(solver, SolverBase): raise Exception(f"No Solver Found")
+        confirm_rule_1(event_id)
+        confirm_rule_2(event_id)
+        deck = solver.get_deck()
+        # self.logger(",".join([f"{card.card_id}:{card.name}[{card.card_type}]({card.stars})" for card in [Card.get_card(cid) for cid in deck]]))
+        data = choose_cards(event_id, *deck)
+        game = Game(BLUE if data.me_first else RED, data.my_card, data.enemy_card, data.rules[:])
+        data = place_card(event_id, game.round, *(solver.solve(game) if game.current_player == BLUE else []))
+        game.place_card(data.block_id, data.hand_id, data.card_id)
+        win = game.win()
+        while win is None:
+            data = place_card(event_id, game.round, *(solver.solve(game) if game.current_player == BLUE else []))
+            game.place_card(data.block_id, data.hand_id, data.card_id)
+            win = game.win()
+        self.logger("Blue win!" if win == BLUE else "Red win!" if win == RED else "Draw!")
+        end_game(event_id)
+        game_finish(event_id)
+        self.solver_used = None
+        self.card_event = None
+
+    def play_game(self, mode):
+        self._play_game(mode)
+        while self.auto_next:
+            sleep(1)
+            self._play_game(mode)
+
     def process_command(self, args):
         if args[0] == "[f]":
-            self.mode = FOCUS
-            self.start_new()
+            self.create_mission(self.play_game, FOCUS)
         elif args[0] == "[c]":
-            self.mode = CURRENT
-            self.start_new()
+            self.create_mission(self.play_game, CURRENT)
         elif args[0] == "auto_next":
             self.auto_next = int(not self.auto_next)
             return f"auto_next:{self.auto_next}"
