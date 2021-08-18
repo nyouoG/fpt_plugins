@@ -17,11 +17,12 @@ def available_action(event: CardEvent, game: Game, force_hand: int = None):
             cards.append((hand_id, hand_card.card.card_id))
     empty_block = [i for i in range(9) if game.blocks[i].card is None]
     red_card_onboard = {block.card.card_id for block in game.blocks if block.belongs_to_first == RED}
+    red_card_onboard |= {h_c.card.card_id for h_c in game.red_cards if h_c is not None and not h_c.is_unknown}
     for hand_id, card_id in cards:
         for b_id in empty_block:
             ans.add((b_id, hand_id, card_id))
     if unknown is not None:
-        for card in event.variable_cards:
+        for card in event.variable_cards + event.fix_cards:
             if card.card_id in red_card_onboard: continue
             for b_id in empty_block: ans.add((b_id, unknown, card.card_id))
     return list(ans)
@@ -33,8 +34,8 @@ def get_steps_score(event: CardEvent, game: Game, allow_try=None):
         if win == BLUE:
             return 1
         elif win == RED:
-            return 0
-        return 0
+            return -1
+        return -0.2
     actions = available_action(event, game, ((game.round + 1) // 2 if 8 in game.rules else None))
     if not actions: return 0
     if len(actions) > allow_try: actions = sample(actions, allow_try)
@@ -78,11 +79,13 @@ class Solver(SolverBase):
 
     def end(self, game: Game):
         if self.card_event.event_id not in cache_data:
-            cache_data[self.card_event.event_id] = [self.deck, 0]
+            cache_data[self.card_event.event_id] = [self.deck, 0.5]
         if game.win() == RED:
             cache_data[self.card_event.event_id][1] -= 1
-        elif game.win() == BLUE:
+        elif game.win() == BLUE and cache_data[self.card_event.event_id][1] < 3:
             cache_data[self.card_event.event_id][1] += 1
+        else:
+            cache_data[self.card_event.event_id][1] -= 0.5
 
     def get_deck(self):
         if self.card_event.event_id in cache_data:

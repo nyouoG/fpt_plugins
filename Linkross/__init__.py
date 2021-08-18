@@ -123,7 +123,12 @@ class Linkross(PluginBase):
         win = game.win()
         while win is None:
             #self.logger(game)
-            r_data = place_card(event_id, game.round, *(solver.solve(game, r_data.force_hand_id) if game.current_player == BLUE else []))
+            if game.current_player == BLUE:
+                choose=solver.solve(game, r_data.force_hand_id)
+                #self.logger(choose)
+                r_data = place_card(event_id, game.round, *choose)
+            else:
+                r_data = place_card(event_id, game.round)
             game.place_card(r_data.block_id, r_data.hand_id, r_data.card_id)
             win = game.win()
         self.logger("Blue win!" if win == BLUE else "Red win!" if win == RED else "Draw!")
