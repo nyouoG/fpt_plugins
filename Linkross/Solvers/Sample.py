@@ -62,7 +62,7 @@ class SampleSolver(SolverBase):
         shuffle(choose)
         return tuple(choose)
 
-    def solve(self, game):
-        hand_id = choice([i for i in range(5) if game.blue_cards[i] is not None] + [5])
+    def solve(self, game, force_hand):
+        hand_id = choice([i for i in range(5) if game.blue_cards[i] is not None] + [5]) if force_hand is None else force_hand
         block_id = choice([i for i in range(9) if not game.blocks[i]] + [9])
         return hand_id, block_id

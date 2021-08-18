@@ -207,9 +207,14 @@ class Block(object):
         self.game = game
         self.card: Optional[Card] = None
         self.belongs_to = 0
+        self.belongs_to_first = 0
 
-    def copy(self):
-        return deepcopy(self)
+    def copy(self, game=None):
+        temp = self.__class__(game or self.game, self.block_id)
+        temp.card = self.card
+        temp.belongs_to = self.belongs_to
+        temp.belongs_to_first = self.belongs_to_first
+        return temp
 
     @property
     def has_top(self):
@@ -266,6 +271,10 @@ class HandCard(object):
         self.card_id = hand_card_id & 0xfff
         self.card = Card.get_card(self.card_id) if self.card_id else None
 
+    @property
+    def is_unknown(self):
+        return self.card is None
+
     def __hash__(self):
         return self.card_id
 
@@ -277,15 +286,14 @@ class HandCard(object):
 
 
 class Game(object):
-    def __init__(self, first_player: int, blue_cards: list[int], red_cards: list[int], rules: list[int]):
+    def __init__(self, first_player: int = None, blue_cards: list[int] = None, red_cards: list[int] = None, rules: list[int] = None):
         self.round = 0
         self.blocks = [Block(self, i) for i in range(9)]
-        self.current_player = first_player
-        self.blue_cards: list[Optional[HandCard]] = [HandCard(card_id) for card_id in blue_cards]
-        self.red_cards: list[Optional[HandCard]] = [HandCard(card_id) for card_id in red_cards]
-        self.rules = set(rules)
-        if 0 in self.rules:
-            self.rules.remove(0)
+        self.current_player = BLUE if first_player is None else first_player
+        self.blue_cards: list[Optional[HandCard]] = [] if blue_cards is None else [HandCard(card_id) for card_id in blue_cards]
+        self.red_cards: list[Optional[HandCard]] = [] if red_cards is None else [HandCard(card_id) for card_id in red_cards]
+        self.rules = set() if rules is None else set(rules)
+        if 0 in self.rules: self.rules.remove(0)
         self.type_cnt = dict()
 
     def __str__(self):
@@ -312,7 +320,14 @@ types: {' , '.join([f"{k}:{v}" for k, v in self.type_cnt.items()])}
             return NONE
 
     def copy(self):
-        return deepcopy(self)
+        temp = self.__class__(self.current_player)
+        temp.round = self.round
+        temp.blocks = [block.copy(temp) for block in self.blocks]
+        temp.blue_cards = self.blue_cards.copy()
+        temp.red_cards = self.red_cards.copy()
+        temp.rules = self.rules
+        temp.type_cnt = self.type_cnt.copy()
+        return temp
 
     def get_type_cnt(self, card_type):
         if not card_type: return 0
@@ -359,6 +374,7 @@ types: {' , '.join([f"{k}:{v}" for k, v in self.type_cnt.items()])}
         block = self.blocks[block_id]
         self.blocks[block_id].card = card
         self.blocks[block_id].belongs_to = self.current_player
+        self.blocks[block_id].belongs_to_first = self.current_player
         to_cal = {(card, block)}
 
         if 4 in self.rules:  # 同数

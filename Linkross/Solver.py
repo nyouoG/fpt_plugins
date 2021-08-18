@@ -22,10 +22,18 @@ class SolverBase(object):
         """
         pass
 
-    def solve(self, game: Game) -> tuple[int, int]:
+    def solve(self, game: Game, force_hand: Optional[int]) -> tuple[int, int]:
         """
         call when its your round
+        :param force_hand: the forced hand id in chaos
         :param game: the current game state
         :return: hand id of your card to use , block id to place
+        """
+        pass
+
+    def end(self, game: Game):
+        """
+        call when game end
+        :param game: pass
         """
         pass

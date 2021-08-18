@@ -75,13 +75,20 @@ send_event_action = OffsetStruct({
     'param11': c_ubyte,
 }, 16)
 
-recv_place_card_pack = OffsetStruct({
+
+class recv_place_card_pack(OffsetStruct({
     'event_id': (c_ushort, 0x0),
     'category': (c_ushort, 0x2),
     'block_id': (c_ubyte, 0xc),
     'hand_id': (c_ubyte, 0xd),
     'card_id': (c_ushort, 0xe),
-}, 24)
+    '_flags': (c_uint, 0x10),
+}, 24)):
+    @property
+    def force_hand_id(self):
+        _force_hand_id = (self._flags >> 28) // 2
+        return _force_hand_id if _force_hand_id < 5 else None
+
 
 recv_duel_action_finish_pack = OffsetStruct({
     'event_id': (c_ushort, 0x0),
@@ -99,12 +106,17 @@ class recv_game_data_pack(OffsetStruct({
     'event_id': (c_ushort, 0x0),
     'category': (c_ushort, 0x2),
     'rules': (c_ubyte * 4, 0xc),
+    '_force_hand_id': (c_ubyte, 0x12),
     'first': (c_ubyte, 0x13),
     'cards': (c_ushort * 10, 0x18),
 }, 72, ['my_card', 'enemy_card', 'me_first'])):
     @property
     def me_first(self):
         return self.first == 1
+
+    @property
+    def force_hand_id(self):
+        return self._force_hand_id if self._force_hand_id < 5 else None
 
     @property
     def my_card(self):
@@ -133,7 +145,7 @@ def talk_finish(event_id):
 
 def game_finish(event_id):
     msg = send_event_finish(category=0x23, event_id=event_id)
-    api.XivNetwork.send_messages([("EventFinish", bytearray(msg))],response_opcode="EventFinish")
+    api.XivNetwork.send_messages([("EventFinish", bytearray(msg))], response_opcode="EventFinish")
 
 
 def place_card(event_id, game_round, hand_id=5, block_id=9):
@@ -142,6 +154,7 @@ def place_card(event_id, game_round, hand_id=5, block_id=9):
     msg.unk1 = 0x5
     res = api.XivNetwork.send_messages([(send_place_card_opcode, bytearray(msg))], response_opcode=recv_place_card_opcode)
     return recv_place_card_pack.from_buffer(res.raw_msg)
+
 
 def choose_cards(event_id, card1, card2, card3, card4, card5):
     deck_choose = send_card_choose_pack(category=0x23, event_id=event_id, cards=(card1, card2, card3, card4, card5))
