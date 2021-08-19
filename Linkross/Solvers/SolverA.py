@@ -9,22 +9,27 @@ def available_action(event: CardEvent, game: Game, force_hand: int = None):
     ans = set()
     cards = list()
     unknown = None
+    unknown_cnt = 0
     for hand_id, hand_card in enumerate(game.get_current_cards()):
         if hand_card is None or (force_hand is not None and hand_id != force_hand): continue
         if hand_card.is_unknown:
             unknown = hand_id
+            unknown_cnt += 1
         else:
             cards.append((hand_id, hand_card.card.card_id))
     empty_block = [i for i in range(9) if game.blocks[i].card is None]
-    red_card_onboard = {block.card.card_id for block in game.blocks if block.belongs_to_first == RED}
-    red_card_onboard |= {h_c.card.card_id for h_c in game.red_cards if h_c is not None and not h_c.is_unknown}
     for hand_id, card_id in cards:
         for b_id in empty_block:
             ans.add((b_id, hand_id, card_id))
     if unknown is not None:
-        for card in event.variable_cards + event.fix_cards:
-            if card.card_id in red_card_onboard: continue
-            for b_id in empty_block: ans.add((b_id, unknown, card.card_id))
+        known_red = {block.card.card_id for block in game.blocks if block.belongs_to_first == RED}
+        known_red |= {h_c.card.card_id for h_c in game.red_cards if h_c is not None and not h_c.is_unknown}
+        guess_unknown = {card.card_id for card in event.fix_cards if card.card_id not in known_red}
+        if len(guess_unknown) < unknown_cnt:
+            guess_unknown |= {card.card_id for card in event.variable_cards if card.card_id not in known_red}
+        for card_id in guess_unknown:
+            for b_id in empty_block:
+                ans.add((b_id, unknown, card_id))
     return list(ans)
 
 
