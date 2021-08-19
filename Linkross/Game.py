@@ -381,7 +381,7 @@ types: {' , '.join([f"{k}:{v}" for k, v in self.type_cnt.items()])}
             pre_add = list()
             for direction in directions:
                 target_block = block.get(direction)
-                if target_block and target_block.card.get(-direction) == card.get(direction):
+                if target_block and self.get_strength(target_block.card, -direction) == self.get_strength(card, direction):
                     pre_add.append((target_block.card, target_block))
             if len(pre_add) > 1:
                 for target_card, target_block in pre_add:
@@ -394,7 +394,7 @@ types: {' , '.join([f"{k}:{v}" for k, v in self.type_cnt.items()])}
             for direction in directions:
                 target_block = block.get(direction)
                 if target_block:
-                    strength_sum = target_block.card.get(-direction) + card.get(direction)
+                    strength_sum = self.get_strength(target_block.card, -direction) + self.get_strength(card, direction)
                     pre_adds.setdefault(strength_sum, list()).append((target_block.card, target_block))
             for pre_add in pre_adds.values():
                 if len(pre_add) > 1:

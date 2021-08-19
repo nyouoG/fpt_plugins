@@ -131,6 +131,7 @@ class Linkross(PluginBase):
                 r_data = place_card(event_id, game.round)
             game.place_card(r_data.block_id, r_data.hand_id, r_data.card_id)
             win = game.win()
+        #self.logger(game)
         self.logger("Blue win!" if win == BLUE else "Red win!" if win == RED else "Draw!")
         solver.end(game)
         end_game(event_id)
