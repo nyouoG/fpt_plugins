@@ -9,7 +9,7 @@ from FFxivPythonTrigger import PluginBase, frame_inject, api
 from FFxivPythonTrigger.AddressManager import AddressManager
 from FFxivPythonTrigger.SaintCoinach import realm
 from FFxivPythonTrigger.hook import Hook
-from FFxivPythonTrigger.memory import scan_pattern
+from FFxivPythonTrigger.memory import scan_pattern, scan_address
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 
 from . import Config, Api, LogicData, Strategy, Define
@@ -18,6 +18,12 @@ ERR_LIMIT = 20
 DEFAULT_PERIOD = 0.2
 command = "@aCombat"
 action_sheet = realm.game_data.get_sheet('Action')
+
+hotbar_process_sig = "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 0F B6 82 ? ? ? ?"
+can_use_action_interface = CFUNCTYPE(c_bool, c_int64, c_int64, c_uint64)
+can_use_action_sig = "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B 2D ? ? ? ? 49 8B D8"
+action_data_interface = CFUNCTYPE(c_int64, c_int64)
+action_data_sig = "E8 ? ? ? ? 48 8B F0 48 85 C0 0F 84 ? ? ? ? BA ? ? ? ? 48 8B CB E8 ? ? ? ? 48 8B 0D ? ? ? ?"
 
 
 def target_key(key: str):
@@ -129,10 +135,11 @@ class XivCombat2(PluginBase):
                 'target': ["focus", "current", "list_distance"],
             })
         )
-        self.hotbar_process_hook = HotbarProcessHook(
-            AddressManager(self.storage.data, self.logger)
-                .get('hotbar_process', scan_pattern, "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 0F B6 82 ? ? ? ?")
-        )
+        am = AddressManager(self.storage.data, self.logger)
+        self.hotbar_process_hook = HotbarProcessHook(am.get('hotbar_process', scan_pattern, hotbar_process_sig))
+        Api.func_action_data = action_data_interface(am.get('action_data', scan_address, action_data_sig, cmd_len=5))
+        Api.func_can_use_action_to = can_use_action_interface(am.get('can_use_action_to', scan_pattern, can_use_action_sig))
+        Api._action_data.cache_clear()
         self.save_config()
 
         self.work = False
@@ -155,6 +162,7 @@ class XivCombat2(PluginBase):
         self.hotbar_process_hook.install()
         self.hotbar_process_hook.enable()
         self.work = True
+        self.logger("start combat thread")
         while self.work:  # 独立线程版本
             try:
                 sleep_time = self._process() if self.config.enable else DEFAULT_PERIOD

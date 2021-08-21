@@ -1,6 +1,22 @@
+from ctypes import addressof
+from functools import cache
+
 from FFxivPythonTrigger import api
 from FFxivPythonTrigger.AttrContainer import AttributeNotFoundException
 from FFxivPythonTrigger.Utils import query
+
+func_action_data = lambda a: 0
+
+func_can_use_action_to = lambda a, b, c: False
+
+
+@cache
+def _action_data(action_id):
+    return func_action_data(action_id)
+
+
+def can_use_action_to(action_id, actor) -> bool:
+    return func_can_use_action_to(action_id, _action_data(action_id), addressof(actor))
 
 
 def get_me_actor():
@@ -128,8 +144,8 @@ def get_players():
     return query(api.XivMemory.actor_table.get_item(), lambda actor: actor.type == 1)
 
 
-def get_hostiles():
-    return query(api.XivMemory.actor_table.get_item(), lambda actor: actor.can_select and actor.is_hostile)
+def get_can_select():
+    return query(api.XivMemory.actor_table.get_item(), lambda actor: actor.can_select)
 
 
 def get_coordinate():

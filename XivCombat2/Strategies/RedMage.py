@@ -144,9 +144,6 @@ class RDMLogic(Strategy):
             #     else:
             #         return UseAbility(16529)  # 续斩处理溢出魔元、走位
 
-        if (lv < 2 or res and min_mana >= (80 if lv >= 50 else 55 if lv >= 35 else 30)) and dis < 4:
-            return UseAbility(7516)  # 魔回刺、判断是否适合开始魔连击
-
         cnt = count_enemy(data, 0)
         if has_swift:  # 有瞬发
             if swift_res_target is not None and data.me.currentMP >= 2400:
@@ -156,6 +153,10 @@ class RDMLogic(Strategy):
                 return UseAbility(7509)  # aoe 散碎、冲击
             if lv >= 4:
                 return UseAbility(7507 if use_white and lv >= 10 else 7505)  # 闪雷、疾风
+
+        if (lv < 2 or res and min_mana >= (80 if lv >= 50 else 55 if lv >= 35 else 30)) and dis < 4:
+            return UseAbility(7516)  # 魔回刺、判断是否适合开始魔连击
+
         if not data.is_moving and lv >= 2:
             if cnt > 2 and lv >= 18:
                 return UseAbility(16525 if use_white and lv >= 22 else 16524)

@@ -14,6 +14,7 @@ action_sheet = SaintCoinach.realm.game_data.get_sheet('Action')
 invincible_effects = {325, 394, 529, 656, 671, 775, 776, 895, 969, 981, 1570, 1697, 1829, }
 invincible_actor = set()
 
+test_enemy_action = 9
 
 def is_actor_status_can_damage(actor):
     if actor.id in invincible_actor or not actor.can_select:
@@ -99,7 +100,7 @@ class LogicData(object):
         if self.config.enable_extra_enemies:
             enemy_id = {enemy.id for enemy in Api.get_enemies_iter()}
             extra_enemies = list()
-            for enemy in Api.get_hostiles():
+            for enemy in Api.get_can_select():
                 if enemy.id not in enemy_id and self.valid_extra_enemies(enemy):
                     extra_enemies.append(enemy)
             enemies += extra_enemies
@@ -111,6 +112,7 @@ class LogicData(object):
         if abs(enemy.pos.z - self.me.pos.z) > 5: return False
         if enemy.currentHP < 2: return False
         if self.config.extra_enemies_combat_only and not enemy.is_in_combat: return False
+        if not Api.can_use_action_to(test_enemy_action,enemy): return False
         return True
 
     @lru_cache
