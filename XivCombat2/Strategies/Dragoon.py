@@ -96,7 +96,7 @@ class DragoonLogic(Strategy):
                     return UseAbility(88)
                 if data.me.level >= 50 and data.time_to_kill_target >= 20:
                     t_effect = data.target.effects.get_dict(source=data.me.id)
-                    if 118 not in t_effect or data.effects[118].timer < t:
+                    if 118 not in t_effect or t_effect[118].timer < t:
                         return UseAbility(88)
             return UseAbility(78)
         return UseAbility(75)
@@ -109,6 +109,7 @@ class DragoonLogic(Strategy):
         if not data[85] and (data.combo_id == 78 or data.combo_id == 87 or cnt_enemy(data) >= 3) and data.max_ttk > 15: return UseAbility(85)
         jump_distance = float(data.config.custom_settings.setdefault('drg_jump', '0'))
         if 1243 in data.effects: return UseAbility(7399)
+        if not data[7400] and data.gauge.stance == 2: return UseAbility(7400)
         if data.target_distance <= jump_distance <= 20:
             if not data[92]: return UseAbility(92)
             if not data[96]: return UseAbility(96)
