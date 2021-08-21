@@ -39,6 +39,7 @@ from .. import Define
 20,战逃反应,2
 """
 """
+1902,忠义之剑,可以发动赎罪剑
 725,沥血剑,体力逐渐减少,
 1368,安魂祈祷
 76,"战逃反应"
@@ -55,7 +56,11 @@ def count_enemy(data: LogicData, skill_type: int):
         aoe = circle(data.me.pos.x, data.me.pos.y, 5)
     else:
         aoe = circle(data.target.pos.x, data.target.pos.y, 5)
-    return sum(map(lambda x: aoe.intersects(x.hitbox), data.valid_enemies))
+    cnt = sum(map(lambda x: aoe.intersects(x.hitbox), data.valid_enemies))
+    if not cnt: return 0
+    if data.config.single == Define.FORCE_SINGLE: return 1
+    if data.config.single == Define.FORCE_MULTI: return 3
+    return cnt
 
 
 def res_lv(data: LogicData) -> int:
@@ -82,6 +87,7 @@ class PaladinLogic(Strategy):
             else:
                 return UseAbility(7381)
         if data.target_distance > 3: return
+        if res_lv(data) and 1902 in data.effects: return UseAbility(16460)
         if data.combo_id == 9 and data.me.level >= 4:
             return UseAbility(15)
         if data.combo_id == 15 and data.me.level >= 26:
@@ -89,12 +95,13 @@ class PaladinLogic(Strategy):
                 t_effect = data.target.effects.get_dict(source=data.me.id)
                 if 725 not in t_effect or t_effect[725].timer < 5:
                     return UseAbility(3538)
+            if 1902 in data.effects:
+                return UseAbility(16460)
             return UseAbility(21)
         if 1368 in data.effects and (not data.is_moving or data.me.level >= 78):
-            return UseAbility(7384)
+            return UseAbility(7384 if data.effects[1368].timer > 3 and data.me.currentMP>=4000 else 16459)
         else:
             return UseAbility(9)
-
 
     def non_global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         if data.config.query_ability:
