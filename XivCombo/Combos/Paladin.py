@@ -1,4 +1,9 @@
 from FFxivPythonTrigger import api
+from FFxivPythonTrigger.SaintCoinach import realm
+
+action_sheet = realm.game_data.get_sheet('Action')
+
+low_blow_group = action_sheet[7540]['CooldownGroup']
 
 """
 28,钢铁信念,10
@@ -56,13 +61,42 @@ def single(me):
     return 9
 
 
+def single_normal(me):
+    lv = me.level
+    combo_id = api.XivMemory.combat_data.combo_state.action_id
+    if combo_id == 9 and lv >= 4:
+        return 15
+    if combo_id == 15 and lv >= 26:
+        return 21
+    return 9
+
+
+def single_dot(me):
+    lv = me.level
+    combo_id = api.XivMemory.combat_data.combo_state.action_id
+    if combo_id == 9 and lv >= 4:
+        return 15
+    if combo_id == 15 and lv >= 26:
+        return 3538
+    return 9
+
+
 def multi(me):
     if me.level >= 40 and api.XivMemory.combat_data.combo_state.action_id == 7381:
         return 16457
     return 7381
 
 
+def stun(me):
+    if api.XivMemory.combat_data.cool_down_group[low_blow_group].remain:
+        return 16
+    return 7540
+
+
 combos = {
-    'pld_single':(16460, single),  # 赎罪剑：单体连
-    'pld_multi':(16457, multi)  # 日珥斩：群体连
+    'pld_single': (16460, single),  # 赎罪剑：单体连
+    'pld_single_normal': (3539, single_normal),  # 赎罪剑：单体连
+    'pld_single_dot': (3538, single_dot),  # 赎罪剑：单体连
+    'pld_stun': (16, stun),  # 赎罪剑：单体连
+    'pld_multi': (16457, multi)  # 日珥斩：群体连
 }
