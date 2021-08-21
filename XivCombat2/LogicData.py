@@ -200,7 +200,7 @@ class LogicData(object):
 
     @cached_property
     def is_moving(self):
-        return bool(Api.get_movement_speed())
+        return self.config.custom_settings.setdefault('keep_moving', 'false') == 'true' or bool(Api.get_movement_speed())
 
     @lru_cache
     def actor_distance_effective(self, target_actor):
