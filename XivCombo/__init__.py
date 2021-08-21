@@ -49,7 +49,7 @@ class XivCombo(PluginBase):
             argtypes = [c_uint]
 
             def hook_function(self, action_id):
-                return (action_id in self.enable_combos) or (self.original(action_id))
+                return int((action_id in self.enable_combos) or (self.original(action_id)))
 
         self.all_combos = dict()
         for f in (Path(__file__).parent / 'Combos').glob('*.py'):
