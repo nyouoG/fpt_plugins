@@ -19,12 +19,15 @@ skills = {
     53: BACK,  # 连击，背，武僧
     54: BACK,  # 正拳，背，武僧
     56: SIDE,  # 崩拳，侧，武僧
+    74: SIDE,  # 双龙脚，侧，武僧
     61: SIDE,  # 双掌打，侧，武僧
     66: BACK,  # 破碎拳，背，武僧
-    74: SIDE,  # 双龙脚，侧，武僧
     2255: BACK,  # 旋风刃，背
     3563: SIDE,  # 强甲破点突，侧
     2258: BACK,  # 攻其不备，背
+    88: BACK,  # 樱花怒放，背
+    3556: BACK,  # 龙尾，背
+    3554: SIDE,  # 龙牙，侧
 }
 
 Vector3 = OffsetStruct({
@@ -60,6 +63,12 @@ PositionAdjustPack = OffsetStruct({
 }, 40)
 
 angle = math.pi / 2 - 0.1
+
+
+def get_skill_data(skill_id):
+    if isinstance(skills[skill_id], int):
+        return skills[skill_id], lambda x: True
+    return skills[skill_id]
 
 
 def get_nearest(me_pos, target, mode, dis=3):
@@ -122,13 +131,19 @@ class AFix(PluginBase):
             new_r = c.r
         target = Vector3(x=new_x if new_x is not None else c.x, y=new_y if new_y is not None else c.y, z=c.z)
         if self.adjust_mode:
-            msg = PositionAdjustPack(old_r=c.r, new_r=new_r, old_pos=target, new_pos=target, unk0=(0x4000 if stop else 0),
-                                     unk1=(0x40 if stop else 0) | self.adjust_sig)
+            msg = PositionAdjustPack(
+                old_r=c.r,
+                new_r=new_r,
+                old_pos=target,
+                new_pos=target,
+                unk0=(0x4000 if stop else 0),
+                unk1=(0x40 if stop else 0) | self.adjust_sig
+            )
             code = "UpdatePositionInstance"
         else:
             msg = PositionSetPack(r=new_r, pos=target, unk2=self.set_sig if stop else 0)
             code = "UpdatePositionHandler"
-        self.logger.debug('goto', target, new_r, hex(msg.unk0), hex(msg.unk1), hex(msg.unk2))
+        self.logger.debug(f'goto x:{target.x:.2f} y:{target.y:.2f} z:{target.z:.2f} r:{new_r:.2f}', hex(msg.unk0), hex(msg.unk1), hex(msg.unk2))
         api.XivNetwork.send_messages([(code, bytearray(msg))], False)
 
     def coor_return(self, evt):
@@ -151,13 +166,16 @@ class AFix(PluginBase):
 
     def makeup_action(self, header, raw):
         d = ActionSend.from_buffer(raw)
-        if self._enable and d.skill_id in skills and 1250 not in api.XivMemory.actor_table.get_me().effects.get_dict():
+        me = api.XivMemory.actor_table.get_me()
+        if self._enable and d.skill_id in skills and 1250 not in me.effects.get_dict():
             t = api.XivMemory.actor_table.get_actor_by_id(d.target_id)
             if t is not None and t.is_positional:
-                xy = get_nearest(api.Coordinate(), t, skills[d.skill_id])
-                if xy is not None:
-                    new_r = api.Coordinate().r
-                    new_r = new_r + (-math.pi if new_r > 0 else math.pi)
-                    self.work = True
-                    self.goto(*xy, new_r)
+                pos, statement = get_skill_data(d.skill_id)
+                if statement(d.skill_id):
+                    xy = get_nearest(api.Coordinate(), t, pos)
+                    if xy is not None:
+                        new_r = api.Coordinate().r
+                        new_r = new_r + (-math.pi if new_r > 0 else math.pi)
+                        self.work = True
+                        self.goto(*xy, new_r)
         return header, bytearray(d)
