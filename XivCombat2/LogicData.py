@@ -121,7 +121,7 @@ class LogicData(object):
     @lru_cache
     def valid_extra_enemies(self, enemy):
         if enemy.effectiveDistanceY > self.config.extra_enemies_distance: return False
-        if abs(enemy.pos.z - self.me.pos.z) > 5: return False
+        if abs(enemy.pos.z - self.me.pos.z) > 15: return False
         if enemy.currentHP < 2: return False
         if self.config.extra_enemies_combat_only and not enemy.is_in_combat: return False
         if not Api.can_use_action_to(test_enemy_pvp_action if self.is_pvp else test_enemy_action, enemy): return False

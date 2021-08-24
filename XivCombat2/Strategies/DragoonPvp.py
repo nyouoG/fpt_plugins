@@ -1,3 +1,5 @@
+from functools import cache
+
 from FFxivPythonTrigger.Utils import rotated_rect
 from ..Strategy import *
 from .. import Define
@@ -21,14 +23,19 @@ def single_skill_id(data):
     return 8793 if data.combo_id == 18916 else 8794 if data.combo_id == 8793 else 8798 if data.combo_id == 8794 else 18916
 
 
+@cache
+def aoe(me, target, dis):
+    return rotated_rect(me.pos.x, me.pos.y, 2, dis, me.target_radian(target))
+
+
 class DragoonPvpLogic(Strategy):
     name = "dragoon_pvp_logic"
 
     def common(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
+        aoe.cache_clear()
         enemies = None
         if data.gcd < 0.3:
-            enemies = [(enemy, rotated_rect(data.me.pos.x, data.me.pos.y, 2, 10, data.me.target_radian(enemy)))
-                       for enemy in data.valid_enemies if data.actor_distance_effective(enemy) <= 10]
+            enemies = [(enemy, aoe(data.me, enemy, 10)) for enemy in data.valid_enemies if data.actor_distance_effective(enemy) <= 10]
             if enemies:
                 aoe_data = map(lambda x: (x[0], sum(map(lambda y: x[1].intersects(y[0].hitbox), enemies))), enemies)
                 aoe_target, max_cnt = max(aoe_data, key=lambda x: x[1])
@@ -44,7 +51,7 @@ class DragoonPvpLogic(Strategy):
             enemies = [enemy for enemy in data.valid_enemies if data.actor_distance_effective(enemy) <= 15]
             if enemies: return UseAbility(8799, min(enemies, key=lambda x: x.currentHP).id)
         if not res_lv(data): return
-        if data[18943]<60 and data.me.currentHP / data.me.maxHP <= 0.7:
+        if data[18943] < 60 and data.me.currentHP / data.me.maxHP <= 0.7:
             return UseAbility(18943)
         if not data[18992]:
             enemies = [enemy for enemy in data.valid_enemies if
@@ -52,8 +59,7 @@ class DragoonPvpLogic(Strategy):
             if enemies: return UseAbility(18992, min(enemies, key=lambda x: x.currentHP).id)
         if not data.gauge.stance: return
         if data.gauge.eyesAmount > 1 and ((not data[8805] and data.gauge.stance == 1) or (not data[8806] and data.gauge.stance == 2)):
-            enemies = [(enemy, rotated_rect(data.me.pos.x, data.me.pos.y, 2, 15, data.me.target_radian(enemy)))
-                       for enemy in data.valid_enemies if data.actor_distance_effective(enemy) <= 15]
+            enemies = [(enemy, aoe(data.me, enemy, 15)) for enemy in data.valid_enemies if data.actor_distance_effective(enemy) <= 15]
             aoe_data = list(map(lambda x: (x[0], sum(map(lambda y: x[1].intersects(y[0].hitbox), enemies))), enemies))
             if aoe_data:
                 aoe_target, max_cnt = max(aoe_data, key=lambda x: x[1])
