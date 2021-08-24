@@ -13,6 +13,8 @@ FRONT = 1
 SIDE = 2
 BACK = 3
 
+DEFAULT_DISTANCE = 5
+
 skills = {
     7481: BACK,  # 月光，背
     7482: SIDE,  # 花车，侧
@@ -92,6 +94,10 @@ def get_nearest(me_pos, target, mode, dis=3):
     return p1.x, p1.y
 
 
+def distance(xy1, xy2):
+    return math.sqrt((xy1[0] - xy2[0]) ** 2 + (xy1[1] - xy2[1]) ** 2)
+
+
 class AFix(PluginBase):
     name = "AFix"
     git_repo = 'nyouoG/fpt_plugins'
@@ -110,6 +116,8 @@ class AFix(PluginBase):
         self.set_sig = 0x93
         self.register_event('network/position_adjust', self.deal_adjust)
         self.register_event('network/position_set', self.deal_set)
+        self.storage.data.setdefault('distance', DEFAULT_DISTANCE)
+        self.storage.save()
         api.command.register(command, self.process_command)
 
     def _onunload(self):
@@ -158,24 +166,33 @@ class AFix(PluginBase):
                 self._enable = True
             elif args[0] == 'off':
                 self._enable = False
+            elif args[0] == 'set':
+                self.storage.data['distance'] = float(args[1])
             else:
                 api.Magic.echo_msg("unknown args: %s" % args[0])
         else:
             self._enable = not self._enable
-        api.Magic.echo_msg("AFix: [%s]" % ('enable' if self._enable else 'disable'))
+        api.Magic.echo_msg("AFix: [%s][%s]" % (('enable' if self._enable else 'disable'), self.storage.data['distance']))
+        self.storage.save()
 
     def makeup_action(self, header, raw):
         d = ActionSend.from_buffer(raw)
         me = api.XivMemory.actor_table.get_me()
-        if self._enable and d.skill_id in skills and 1250 not in me.effects.get_dict():
+        me_effects = me.effects.get_dict()
+        if self._enable and d.skill_id in skills and 1250 not in me_effects and 1179 not in me_effects:
             t = api.XivMemory.actor_table.get_actor_by_id(d.target_id)
             if t is not None and t.is_positional:
                 pos, statement = get_skill_data(d.skill_id)
                 if statement(d.skill_id):
-                    xy = get_nearest(api.Coordinate(), t, pos)
-                    if xy is not None:
-                        new_r = api.Coordinate().r
-                        new_r = new_r + (-math.pi if new_r > 0 else math.pi)
-                        self.work = True
-                        self.goto(*xy, new_r)
+                    c = api.Coordinate()
+                    xy = get_nearest(c, t, pos)
+                    if xy is not None :
+                        dis=distance(xy, (c.x, c.y))
+                        if dis>=self.storage.data['distance']:
+                            self.logger.debug(f"too far to fix: {dis}")
+                        else:
+                            new_r = api.Coordinate().r
+                            new_r = new_r + (-math.pi if new_r > 0 else math.pi)
+                            self.work = True
+                            self.goto(*xy, new_r)
         return header, bytearray(d)

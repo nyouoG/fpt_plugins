@@ -58,7 +58,7 @@ def res_lv(data: LogicData) -> int:
         return 1
     elif data.config.resource == Define.RESOURCE_STINGY:
         return 0
-    return int(data.max_ttk > 5)
+    return int(data.max_ttk > 10)
 
 
 class MonkLogic(Strategy):
@@ -81,7 +81,7 @@ class MonkLogic(Strategy):
         if 109 in data.effects and data.me.level >= 6:
             if cnt > 1 and data.me.level >= 30: return UseAbility(70)
             t_effect = data.target.effects.get_dict(source=data.me.id)
-            if data.me.level >= 30 and (246 not in t_effect or t_effect[246].timer <= 6):
+            if data.me.level >= 30 and (246 not in t_effect or t_effect[246].timer <= 6) and data.time_to_kill_target > 9:
                 return UseAbility(66)
             return UseAbility(56)
         if cnt > 2 and data.me.level >= 26: return UseAbility(62)
