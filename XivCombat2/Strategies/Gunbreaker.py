@@ -30,10 +30,13 @@ from .. import Define
 
 
 def count_enemy(data: LogicData):
+
+    aoe = circle(data.me.pos.x, data.me.pos.y, 5)
+    cnt= sum(map(lambda x: aoe.intersects(x.hitbox), data.valid_enemies))
+    if not cnt:return 0
     if data.config.single == Define.FORCE_SINGLE: return 1
     if data.config.single == Define.FORCE_MULTI: return 3
-    aoe = circle(data.me.pos.x, data.me.pos.y, 5)  # 六分
-    return sum(map(lambda x: aoe.intersects(x.hitbox), data.valid_enemies))
+    return cnt
 
 
 def res_lv(data: LogicData) -> int:

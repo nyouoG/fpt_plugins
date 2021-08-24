@@ -1,4 +1,3 @@
-from FFxivPythonTrigger.Logger import info
 from FFxivPythonTrigger.Utils import rotated_rect
 from ..Strategy import *
 from .. import Define

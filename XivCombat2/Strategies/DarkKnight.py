@@ -27,13 +27,15 @@ from .. import Define
 
 
 def count_enemy(data: LogicData, skill_type: int):
-    if data.config.single == Define.FORCE_SINGLE: return 1
-    if data.config.single == Define.FORCE_MULTI: return 3
     if skill_type == 1:
         aoe = circle(data.me.pos.x, data.me.pos.y, 5)  # 转圈圈
     else:
         aoe = rotated_rect(data.me.pos.x, data.me.pos.y, 1.5, 10, data.me.target_radian(data.target))  # 波动
-    return sum(map(lambda x: aoe.intersects(x.hitbox), data.valid_enemies))
+    cnt = sum(map(lambda x: aoe.intersects(x.hitbox), data.valid_enemies))
+    if not cnt: return 0
+    if data.config.single == Define.FORCE_SINGLE: return 1
+    if data.config.single == Define.FORCE_MULTI: return 3
+    return cnt
 
 
 def res_lv(data: LogicData) -> int:
