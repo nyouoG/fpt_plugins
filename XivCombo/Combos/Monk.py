@@ -1,4 +1,3 @@
-from FFxivPythonTrigger import api
 
 """
 53,连击,1
@@ -53,8 +52,8 @@ def single_normal(me):
 
 def single_special(me):
     effects = me.effects.get_dict()
-    if 110 in effects or 2513 in effects:
-        return 61 if 101 not in effects else 66
+    # if 110 in effects or 2513 in effects:
+    #     return 61 if 101 not in effects else 66
     if 108 in effects and me.level >= 4:
         return 54 if me.level < 18 else 61
     if 109 in effects and me.level >= 6:
@@ -78,3 +77,4 @@ combos = {
     'mnk_single_special': (74, single_special),  # buff/dot技能
     'mnk_multi': (70, multi),  # aoe技能
 }
+
