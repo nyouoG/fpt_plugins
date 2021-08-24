@@ -1,4 +1,4 @@
-from functools import cached_property, lru_cache
+from functools import cached_property, lru_cache, cache
 from math import sqrt
 from typing import TYPE_CHECKING
 
@@ -10,11 +10,14 @@ if TYPE_CHECKING:
     from . import Config
 
 action_sheet = SaintCoinach.realm.game_data.get_sheet('Action')
+zone_sheet = SaintCoinach.realm.game_data.get_sheet('TerritoryType')
 
 invincible_effects = {325, 394, 529, 656, 671, 775, 776, 895, 969, 981, 1570, 1697, 1829, }
 invincible_actor = set()
 
 test_enemy_action = 9
+test_enemy_pvp_action = 8746
+
 
 def is_actor_status_can_damage(actor):
     if actor.id in invincible_actor or not actor.can_select:
@@ -23,6 +26,12 @@ def is_actor_status_can_damage(actor):
         if eid in invincible_effects:
             return False
     return True
+
+
+@cache
+def zone_is_pvp(zone_id):
+    if not zone_id: return False
+    return zone_sheet[zone_id]["IsPvpZone"]
 
 
 class LogicData(object):
@@ -35,7 +44,10 @@ class LogicData(object):
 
     @cached_property
     def job(self):
-        return Api.get_current_job()
+        if self.is_pvp:
+            return f"{Api.get_current_job()}_pvp"
+        else:
+            return str(Api.get_current_job())
 
     @cached_property
     def target(self):
@@ -112,7 +124,7 @@ class LogicData(object):
         if abs(enemy.pos.z - self.me.pos.z) > 5: return False
         if enemy.currentHP < 2: return False
         if self.config.extra_enemies_combat_only and not enemy.is_in_combat: return False
-        if not Api.can_use_action_to(test_enemy_action,enemy): return False
+        if not Api.can_use_action_to(test_enemy_pvp_action if self.is_pvp else test_enemy_action, enemy): return False
         return True
 
     @lru_cache
@@ -222,3 +234,7 @@ class LogicData(object):
     @cached_property
     def coordinate(self):
         return Api.get_coordinate()
+
+    @cached_property
+    def is_pvp(self):
+        return zone_is_pvp(Api.get_zone_id())

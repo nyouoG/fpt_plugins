@@ -153,3 +153,6 @@ def get_coordinate():
         return api.Coordinate()
     except AttributeNotFoundException:
         return get_me_actor().pos
+
+def get_zone_id():
+    return api.XivMemory.zone_id

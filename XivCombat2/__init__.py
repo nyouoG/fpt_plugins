@@ -1,4 +1,5 @@
 import os
+import re
 from ctypes import *
 from functools import cache
 from threading import Lock
@@ -25,22 +26,7 @@ can_use_action_sig = "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48
 action_data_interface = CFUNCTYPE(c_int64, c_int64)
 action_data_sig = "E8 ? ? ? ? 48 8B F0 48 85 C0 0F 84 ? ? ? ? BA ? ? ? ? 48 8B CB E8 ? ? ? ? 48 8B 0D ? ? ? ?"
 
-
-def target_key(key: str):
-    if key == "[t]":
-        t = Api.get_current_target()
-    elif key == "[me]":
-        t = Api.get_me_actor()
-    elif key == "[f]":
-        t = Api.get_focus_target()
-    elif key == "[mo]":
-        t = Api.get_mo_target()
-    elif key == "{mo}":
-        t = Api.get_mo_target()
-        if t is None: return None
-    else:
-        return key
-    return t.id if t is not None else Api.get_me_actor().id
+min_hp_re = re.compile(r"\[min_hp:(\d+)]")
 
 
 def use_item(to_use: Strategy.UseItem):
@@ -208,6 +194,7 @@ class XivCombat2(PluginBase):
         to_use = None
         if data.gcd < 0.2: self.config.ability_cnt = 0
         process_non_gcd = data.gcd > 0.9 and self.config.ability_cnt < int(data.gcd_total) or data.gcd == 0
+        # self.logger(data.job)
         strategy = self.config.get_strategy(data.job)
         if strategy is not None and (not strategy.fight_only or data.valid_enemies):
             self.is_working = True
@@ -291,7 +278,7 @@ class XivCombat2(PluginBase):
             self.config.resource = int(args[1])
         elif args[0] == "load":
             if args[1] == "current":
-                key = Api.get_current_job()
+                key = LogicData.LogicData(self.config).job
             else:
                 try:
                     key = int(args[1])
@@ -307,7 +294,7 @@ class XivCombat2(PluginBase):
                 t = Api.get_current_target()
                 target = Api.get_me_actor().id if t is None else t.id
             else:
-                t_key = target_key(args[3])
+                t_key = self.target_key(args[3])
                 if t_key is None: return
                 target = int(t_key)
             a = Strategy.UseAbility(int(args[2]), target)
@@ -395,3 +382,29 @@ class XivCombat2(PluginBase):
         except Exception as e:
             self.logger.error(format_exc())
             api.Magic.echo_msg(e)
+
+    def target_key(self, key: str):
+        t = None
+        if key == "[t]":
+            t = Api.get_current_target()
+        elif key == "[me]":
+            t = Api.get_me_actor()
+        elif key == "[f]":
+            t = Api.get_focus_target()
+        elif key == "[mo]":
+            t = Api.get_mo_target()
+        elif key == "{mo}":
+            t = Api.get_mo_target()
+            if t is None: return None
+        else:
+            _t = min_hp_re.match(key)
+            if _t:
+                dis = float(_t.group(1))
+                ld = LogicData.LogicData(self.config)
+                e = [e for e in ld.valid_enemies if ld.actor_distance_effective(e) < dis]
+                if e:
+                    self.logger(min(e, key=lambda e: e.currentHP).Name)
+                    return min(e, key=lambda e: e.currentHP).id
+                else:
+                    return ld.me.id
+        return t.id if t is not None else Api.get_me_actor().id
