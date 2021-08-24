@@ -44,7 +44,7 @@ class DragoonPvpLogic(Strategy):
             enemies = [enemy for enemy in data.valid_enemies if data.actor_distance_effective(enemy) <= 15]
             if enemies: return UseAbility(8799, min(enemies, key=lambda x: x.currentHP).id)
         if not res_lv(data): return
-        if not data[18943] and data.me.currentHP / data.me.maxHP <= 0.7:
+        if data[18943]<60 and data.me.currentHP / data.me.maxHP <= 0.7:
             return UseAbility(18943)
         if not data[18992]:
             enemies = [enemy for enemy in data.valid_enemies if
