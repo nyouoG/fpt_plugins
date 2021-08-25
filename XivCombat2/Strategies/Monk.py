@@ -102,5 +102,7 @@ class MonkLogic(Strategy):
                 return UseAbility(69)
         if data.gauge.chakraStacks > 4:
             return UseAbility(16474 if cnt_enemy(data) > 1 and data.me.level >= 74 else 3547)
+        if data[71]<5 and data.target_distance <= float(data.config.custom_settings.setdefault('mnk_jump', '0'))<=20:
+            return UseAbility(71)
         if not data[3543]: return UseAbility(3543)
         if not data[3545]: return UseAbility(3545)

@@ -25,6 +25,8 @@ can_use_action_interface = CFUNCTYPE(c_bool, c_int64, c_int64, c_uint64)
 can_use_action_sig = "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B 2D ? ? ? ? 49 8B D8"
 action_data_interface = CFUNCTYPE(c_int64, c_int64)
 action_data_sig = "E8 ? ? ? ? 48 8B F0 48 85 C0 0F 84 ? ? ? ? BA ? ? ? ? 48 8B CB E8 ? ? ? ? 48 8B 0D ? ? ? ?"
+action_distance_check_sig = "44 89 44 24 ? 89 54 24 ? 55 53 57"
+action_distance_check_interface = CFUNCTYPE(c_int64, c_uint, c_int64, c_int64)
 
 min_hp_re = re.compile(r"\[min_hp:(\d+)]")
 
@@ -123,8 +125,9 @@ class XivCombat2(PluginBase):
         )
         am = AddressManager(self.storage.data, self.logger)
         self.hotbar_process_hook = HotbarProcessHook(am.get('hotbar_process', scan_pattern, hotbar_process_sig))
-        Api.func_action_data = action_data_interface(am.get('action_data', scan_address, action_data_sig, cmd_len=5))
-        Api.func_can_use_action_to = can_use_action_interface(am.get('can_use_action_to', scan_pattern, can_use_action_sig))
+        Api._func_action_data = action_data_interface(am.get('action_data', scan_address, action_data_sig, cmd_len=5))
+        Api._func_can_use_action_to = can_use_action_interface(am.get('can_use_action_to', scan_pattern, can_use_action_sig))
+        Api._func_action_distance_check = action_distance_check_interface(am.get('action_distance_check', scan_pattern, action_distance_check_sig))
         Api._action_data.cache_clear()
         self.save_config()
 
@@ -230,7 +233,8 @@ class XivCombat2(PluginBase):
             if isinstance(to_use, Strategy.UseAbility) and Api.skill_queue_is_empty():
                 if data.config.custom_settings.setdefault('debug_output', 'false') == 'true':
                     actor = Api.get_actor_by_id(to_use.target_id)
-                    self.logger.debug(f"use:{action_sheet[to_use.ability_id]['Name']}({to_use.ability_id}) on {actor.Name}({hex(actor.id)[2:]}")
+                    self.logger.debug(f"use:{action_sheet[to_use.ability_id]['Name']}({to_use.ability_id}) on {actor.Name}({hex(actor.id)[2:]})"
+                                      f" check: {data.target_action_check(to_use.ability_id,actor)}")
                 use_ability(to_use)
             elif isinstance(to_use, Strategy.UseItem):  # 使用道具，应该只有食物或者爆发药吧？
                 use_item(to_use)

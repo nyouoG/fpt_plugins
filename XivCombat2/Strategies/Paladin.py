@@ -87,19 +87,20 @@ class PaladinLogic(Strategy):
             else:
                 return UseAbility(7381)
         if data.target_distance > 3: return
-        if res_lv(data) and 1902 in data.effects: return UseAbility(16460)
+        if 1902 in data.effects and (res_lv(data) or data.effects[1902].timer < 2.5 * data.effects[1902].param):
+            return UseAbility(16460)
         if data.combo_id == 9 and data.me.level >= 4:
             return UseAbility(15)
         if data.combo_id == 15 and data.me.level >= 26:
             if data.me.level >= 54:
                 t_effect = data.target.effects.get_dict(source=data.me.id)
-                if 725 not in t_effect or t_effect[725].timer < 5:
+                if (725 not in t_effect or t_effect[725].timer < 5) and data.time_to_kill_target >= 10:
                     return UseAbility(3538)
             if 1902 in data.effects:
                 return UseAbility(16460)
             return UseAbility(21)
         if 1368 in data.effects and (not data.is_moving or data.me.level >= 78):
-            return UseAbility(7384 if data.effects[1368].timer > 3 and data.me.currentMP>=4000 else 16459)
+            return UseAbility(7384 if data.effects[1368].timer > 3 and data.me.currentMP >= 4000 else 16459)
         else:
             return UseAbility(9)
 

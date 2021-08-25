@@ -90,7 +90,7 @@ class DragoonLogic(Strategy):
         if data.combo_id == 87 and data.me.level >= 50: return UseAbility(88)
         if data.combo_id == 75 and data.me.level >= 4:
             if data.me.level >= 18:
-                t = 14 if data.me.level >= 56 else 9 if data.me.level >= 26 else 6
+                t = 11 if data.me.level >= 26 else 6
                 if 1914 not in data.effects or data.effects[1914].timer < t:
                     return UseAbility(88)
                 if data.me.level >= 50 and data.time_to_kill_target >= 20:

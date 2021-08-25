@@ -5,18 +5,24 @@ from FFxivPythonTrigger import api
 from FFxivPythonTrigger.AttrContainer import AttributeNotFoundException
 from FFxivPythonTrigger.Utils import query
 
-func_action_data = lambda a: 0
+_func_action_data = lambda a: 0
 
-func_can_use_action_to = lambda a, b, c: False
+_func_can_use_action_to = lambda a, b, c: False
+
+_func_action_distance_check = lambda a, b, c: 0
 
 
 @cache
 def _action_data(action_id):
-    return func_action_data(action_id)
+    return _func_action_data(action_id)
 
 
 def can_use_action_to(action_id, actor) -> bool:
-    return func_can_use_action_to(action_id, _action_data(action_id), addressof(actor))
+    return _func_can_use_action_to(action_id, _action_data(action_id), addressof(actor))
+
+
+def action_distance_check(action_id, actor1, actor2):
+    return _func_action_distance_check(action_id, addressof(actor1), addressof(actor2))
 
 
 def get_me_actor():
@@ -153,6 +159,7 @@ def get_coordinate():
         return api.Coordinate()
     except AttributeNotFoundException:
         return get_me_actor().pos
+
 
 def get_zone_id():
     return api.XivMemory.zone_id

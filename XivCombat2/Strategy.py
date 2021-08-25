@@ -13,7 +13,6 @@ class UseAbility(object):
         self.target_id = target_id
 
 
-
 class UseItem(object):
     def __init__(self, item_id: int, priority: int = HQ_FIRST, target_id: int = None):
         self.item_id = item_id

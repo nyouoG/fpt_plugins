@@ -3,6 +3,7 @@ from math import sqrt
 from typing import TYPE_CHECKING
 
 from FFxivPythonTrigger import Utils, SaintCoinach
+from FFxivPythonTrigger.Logger import info
 
 from . import Api, Define
 
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
 action_sheet = SaintCoinach.realm.game_data.get_sheet('Action')
 zone_sheet = SaintCoinach.realm.game_data.get_sheet('TerritoryType')
 
-invincible_effects = {325, 394, 529, 656, 671, 775, 776, 895, 969, 981, 1570, 1697, 1829, }
+invincible_effects = {325, 394, 529, 656, 671, 775, 776, 895, 969, 981, 1570, 1697, 1829, 1302,}
 invincible_actor = set()
 
 test_enemy_action = 9
@@ -105,6 +106,10 @@ class LogicData(object):
     def valid_players(self):
         return [player for player in Api.get_players() if player.can_select]
 
+    @cache
+    def target_action_check(self, action_id, target):
+        return not bool(Api.action_distance_check(action_id, self.me, target))
+
     @cached_property
     def valid_enemies(self):
         enemies = Api.get_actors_by_id(*{enemy.id for enemy in Utils.query(Api.get_enemies_iter(), key=lambda x: x.can_select)})
@@ -120,9 +125,9 @@ class LogicData(object):
 
     @lru_cache
     def valid_extra_enemies(self, enemy):
+        if not is_actor_status_can_damage(enemy):return False
         if enemy.effectiveDistanceY > self.config.extra_enemies_distance: return False
-        if abs(enemy.pos.z - self.me.pos.z) > 15: return False
-        if enemy.currentHP < 2: return False
+        if enemy.currentHP < 3: return False
         if self.config.extra_enemies_combat_only and not enemy.is_in_combat: return False
         if not Api.can_use_action_to(test_enemy_pvp_action if self.is_pvp else test_enemy_action, enemy): return False
         return True
