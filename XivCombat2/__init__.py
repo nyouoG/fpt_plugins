@@ -95,10 +95,16 @@ class XivCombat2(PluginBase):
                             t_id = Api.get_me_actor().id if t is None else t.id
                             if block.type == 1 and (not is_area_action(block.param) or self.config.auto_location):
                                 self.config.enable = False
+                                action_id = block.param
+                                data = LogicData.LogicData(self.config)
+                                strategy = self.config.get_strategy(data.job)
+                                if strategy is not None:
+                                    to_use = strategy.process_ability_use(data, block.param, t_id)
+                                    if to_use is not None: action_id, t_id = to_use
                                 if self.config.custom_settings.setdefault('debug_output', 'false') == 'true':
-                                    self.logger.debug(f"force action {block.param}")
+                                    self.logger.debug(f"force action {action_id} on {t_id:x}")
                                 self.config.ability_cnt += 1
-                                use_ability(Strategy.UseAbility(block.param, t_id))
+                                use_ability(Strategy.UseAbility(action_id, t_id))
                                 self.config.enable = True
                                 return 1
                             elif block.type == 2 or block.type == 10:
@@ -234,7 +240,7 @@ class XivCombat2(PluginBase):
                 if data.config.custom_settings.setdefault('debug_output', 'false') == 'true':
                     actor = Api.get_actor_by_id(to_use.target_id)
                     self.logger.debug(f"use:{action_sheet[to_use.ability_id]['Name']}({to_use.ability_id}) on {actor.Name}({hex(actor.id)[2:]})"
-                                      f" check: {data.target_action_check(to_use.ability_id,actor)}")
+                                      f" check: {data.target_action_check(to_use.ability_id, actor)}")
                 use_ability(to_use)
             elif isinstance(to_use, Strategy.UseItem):  # 使用道具，应该只有食物或者爆发药吧？
                 use_item(to_use)

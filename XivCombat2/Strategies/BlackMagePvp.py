@@ -2,6 +2,7 @@ from time import perf_counter
 
 import member as member
 
+from FFxivPythonTrigger.Logger import info
 from FFxivPythonTrigger.Utils import circle
 from ..Strategy import *
 from .. import Api
@@ -67,27 +68,42 @@ def get_nearby_enemy(data: LogicData, target):
     return sum(map(lambda a_m: target.absolute_distance_xy(a_m) < 30, data.valid_enemies))
 
 
+def get_nearest_enemy_distance(data: LogicData, target):
+    d = list(map(lambda a_m: target.absolute_distance_xy(a_m) < 30, data.valid_enemies))
+    if not d: return 500
+    return min(d)
+
+
 class BlackMagePvpLogic(Strategy):
     name = "black_mage_pvp_logic"
+    fight_only = False
 
     def __init__(self, config):
         super().__init__(config)
         self.buff = 0
 
+    def process_ability_use(self, data: LogicData, action_id: int, target_id: int) -> Optional[Tuple[int, int]]:
+        if action_id == 8869:
+            move_targets = [member for member in data.valid_party if member.id != data.me.id and
+                            data.actor_distance_effective(member) < 26 and data.target_action_check(8869, member)]
+            if move_targets:
+                _move_targets = [member for member in move_targets if get_nearby_alliance(data, member) > 4]
+                if _move_targets: move_targets = _move_targets
+                # move_target = max(move_targets, key=lambda target: get_nearest_enemy_distance(data, target))
+                move_target = min(move_targets, key=lambda target: get_nearby_enemy(data, target))
+                if get_nearest_enemy_distance(data, move_target) < get_nearest_enemy_distance(data, data.me):
+                    return action_id, data.me.id
+                return action_id, move_target.id
+        elif action_id == 17775:
+            enemies = [Enemy(enemy, data) for enemy in data.valid_enemies if data.actor_distance_effective(enemy) < 31]
+            enemies_25 = [enemy for enemy in enemies if enemy.dis < 26 and data.target_action_check(8858, enemy.enemy)]
+            if not enemies_25: return
+            for enemy in enemies_25: enemy.cal_aoe_targets(enemies)
+            enemies_25_aoe = [enemy for enemy in enemies if enemy.total_aoe > 1]
+            target = max(enemies_25_aoe, key=lambda x: x.total_aoe) if enemies_25_aoe else min(enemies_25, key=lambda x: x.dis)
+            return 17775, target.enemy.id
+
     def common(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
-        if data.config.custom_settings.setdefault('blm_pvp_move', ''):
-            if not data[8869]:
-                move_targets = [member for member in data.valid_party if
-                                data.actor_distance_effective(member) < 26 and data.target_action_check(8869, member)]
-                if move_targets:
-                    _move_targets = [member for member in move_targets if get_nearby_alliance(data, member) > 4]
-                    if _move_targets: move_targets = _move_targets
-                    move_target = min(move_targets, key=lambda target: get_nearby_enemy(data, target))
-                    return UseAbility(8869, move_target)
-                else:
-                    data.config.custom_settings['blm_pvp_move'] = ''
-            else:
-                data.config.custom_settings['blm_pvp_move'] = ''
         if data.me.currentHP / data.me.maxHP <= 0.7 and data[18943] <= 30:
             return UseAbility(18943, data.me)
         if data.gcd > 0.4: return
@@ -116,7 +132,7 @@ class BlackMagePvpLogic(Strategy):
             if aoe_target.total_aoe_non_thunder > 1 and data.gauge.umbralMilliseconds > 3000 and data.gauge.umbralStacks > 0:
                 return UseAbility(18935, aoe_target.enemy)
             if not data.is_moving:
-                enemies_20_aoe = [enemy for enemy in enemies if enemy.dis < 21]
+                enemies_20_aoe = [enemy for enemy in enemies if enemy.dis < 23]
                 if enemies_20_aoe:
                     aoe_target = max(enemies_20_aoe, key=lambda x: (x.total_aoe_thunder, x.total_aoe))
                     return UseAbility(aoe(data), aoe_target.enemy)
