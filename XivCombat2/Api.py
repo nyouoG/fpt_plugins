@@ -11,6 +11,12 @@ _func_can_use_action_to = lambda a, b, c: False
 
 _func_action_distance_check = lambda a, b, c: 0
 
+"""
+ffxiv_dx11.exe+805CDF
+ffxiv_dx11.exe+80F3B1
+ffxiv_dx11.exe+62B510
+"""
+
 
 @cache
 def _action_data(action_id):

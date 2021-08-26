@@ -25,8 +25,8 @@ can_use_action_interface = CFUNCTYPE(c_bool, c_int64, c_int64, c_uint64)
 can_use_action_sig = "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B 2D ? ? ? ? 49 8B D8"
 action_data_interface = CFUNCTYPE(c_int64, c_int64)
 action_data_sig = "E8 ? ? ? ? 48 8B F0 48 85 C0 0F 84 ? ? ? ? BA ? ? ? ? 48 8B CB E8 ? ? ? ? 48 8B 0D ? ? ? ?"
-action_distance_check_sig = "44 89 44 24 ? 89 54 24 ? 55 53 57"
 action_distance_check_interface = CFUNCTYPE(c_int64, c_uint, c_int64, c_int64)
+action_distance_check_sig = "48 89 5C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 89 4C 24 ?"
 
 min_hp_re = re.compile(r"\[min_hp:(\d+)]")
 

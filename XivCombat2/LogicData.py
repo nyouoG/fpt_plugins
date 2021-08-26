@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 action_sheet = SaintCoinach.realm.game_data.get_sheet('Action')
 zone_sheet = SaintCoinach.realm.game_data.get_sheet('TerritoryType')
 
-invincible_effects = {325, 394, 529, 656, 671, 775, 776, 895, 969, 981, 1570, 1697, 1829, 1302,}
+invincible_effects = {325, 394, 529, 656, 671, 775, 776, 895, 969, 981, 1570, 1697, 1829, 1302, }
 invincible_actor = set()
 
 test_enemy_action = 9
@@ -108,7 +108,8 @@ class LogicData(object):
 
     @cache
     def target_action_check(self, action_id, target):
-        return not bool(Api.action_distance_check(action_id, self.me, target))
+        self.me.pos.r = self.me.target_radian(target)
+        return not Api.action_distance_check(action_id, self.me, target)
 
     @cached_property
     def valid_enemies(self):
@@ -125,7 +126,7 @@ class LogicData(object):
 
     @lru_cache
     def valid_extra_enemies(self, enemy):
-        if not is_actor_status_can_damage(enemy):return False
+        if not is_actor_status_can_damage(enemy): return False
         if enemy.effectiveDistanceY > self.config.extra_enemies_distance: return False
         if enemy.currentHP < 3: return False
         if self.config.extra_enemies_combat_only and not enemy.is_in_combat: return False

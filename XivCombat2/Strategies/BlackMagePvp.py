@@ -39,7 +39,7 @@ class Enemy(object):
             self.thunder = self.effects[1324].timer
         else:
             self.thunder = 0
-        self.hitbox = enemy.hitbox
+        self.hitbox = circle(enemy.pos.x, enemy.pos.y, 0.1)
         self.dis = data.actor_distance_effective(enemy)
         self.total_aoe = 0
         self.total_aoe_thunder = 0
@@ -81,7 +81,7 @@ class BlackMagePvpLogic(Strategy):
             enemies_25_thunder = [enemy for enemy in enemies_25_aoe if enemy.total_aoe_thunder]
             if enemies_25_thunder:
                 aoe_target = max(enemies_25_thunder, key=lambda x: x.total_aoe)
-                if data.gauge.foulCount and (data.gauge.foulCount > 1 or aoe_target.total_aoe > 4):
+                if data.gauge.foulCount and (data.gauge.foulCount > 1 or aoe_target.total_aoe > 3):
                     return UseAbility(8865, aoe_target.enemy)
                 if self.buff < perf_counter() - 15 and data.me.currentMP >= 4000 and data.gauge.umbralStacks > 0 and aoe_target.total_aoe > 2:
                     self.buff = perf_counter()
@@ -89,7 +89,7 @@ class BlackMagePvpLogic(Strategy):
                 if has_speed:
                     return UseAbility(aoe(data), aoe_target.enemy)
             aoe_target = max(enemies_25_aoe, key=lambda x: (x.total_aoe_non_thunder, x.total_aoe))
-            if aoe_target.total_aoe_non_thunder > 1:
+            if aoe_target.total_aoe_non_thunder > 1 and data.gauge.umbralMilliseconds > 3000 and data.gauge.umbralStacks > 0:
                 return UseAbility(18935, aoe_target.enemy)
             if not data.is_moving:
                 enemies_20_aoe = [enemy for enemy in enemies if enemy.dis < 21]
@@ -109,14 +109,10 @@ class BlackMagePvpLogic(Strategy):
                 return UseAbility(aoe(data), single_target.enemy)
         if 1365 in data.effects and data.effects[1365].timer < 5:
             return UseAbility(8861, single_target.enemy)
-        if target_with_thunder:
-            if not data.is_moving and data.gauge.umbralMilliseconds > 3000:
-                return UseAbility(single(data), single_target.enemy)
-            if (data.me.currentMP >= 5000 and data.gauge.umbralStacks > 0) or data.me.currentMP >= 10000:
-                return UseAbility(8858, single_target.enemy)
-            return UseAbility(8859, single_target.enemy)
-        else:
-            if enemies_25_aoe:
-                return UseAbility(18935, max(enemies_25_aoe, key=lambda x: (x.total_aoe_non_thunder, x.total_aoe)).enemy)
-            else:
-                return UseAbility(8860, single_target.enemy)
+        if not (target_with_thunder or data.gauge.umbralMilliseconds < 3000) and enemies_25_aoe:
+            return UseAbility(18935, max(enemies_25_aoe, key=lambda x: (x.total_aoe_non_thunder, x.total_aoe)).enemy)
+        if not data.is_moving and data.gauge.umbralMilliseconds > 3000:
+            return UseAbility(single(data), single_target.enemy)
+        if (data.me.currentMP >= 5000 and data.gauge.umbralStacks > 0) or data.me.currentMP >= 10000:
+            return UseAbility(8858, single_target.enemy)
+        return UseAbility(8859, single_target.enemy)
