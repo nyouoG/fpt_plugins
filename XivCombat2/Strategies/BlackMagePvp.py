@@ -1,4 +1,7 @@
 from time import perf_counter
+
+import member as member
+
 from FFxivPythonTrigger.Utils import circle
 from ..Strategy import *
 from .. import Api
@@ -56,6 +59,14 @@ class Enemy(object):
         self.total_aoe = self.total_aoe_thunder + self.total_aoe_non_thunder
 
 
+def get_nearby_alliance(data: LogicData, target):
+    return sum(map(lambda a_m: target.absolute_distance_xy(a_m) < 10, data.valid_alliance))
+
+
+def get_nearby_enemy(data: LogicData, target):
+    return sum(map(lambda a_m: target.absolute_distance_xy(a_m) < 30, data.valid_enemies))
+
+
 class BlackMagePvpLogic(Strategy):
     name = "black_mage_pvp_logic"
 
@@ -64,6 +75,19 @@ class BlackMagePvpLogic(Strategy):
         self.buff = 0
 
     def common(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
+        if data.config.custom_settings.setdefault('blm_pvp_move', ''):
+            if not data[8869]:
+                move_targets = [member for member in data.valid_party if
+                                data.actor_distance_effective(member) < 26 and data.target_action_check(8869, member)]
+                if move_targets:
+                    _move_targets = [member for member in move_targets if get_nearby_alliance(data, member) > 4]
+                    if _move_targets: move_targets = _move_targets
+                    move_target = min(move_targets, key=lambda target: get_nearby_enemy(data, target))
+                    return UseAbility(8869, move_target)
+                else:
+                    data.config.custom_settings['blm_pvp_move'] = ''
+            else:
+                data.config.custom_settings['blm_pvp_move'] = ''
         if data.me.currentHP / data.me.maxHP <= 0.7 and data[18943] <= 30:
             return UseAbility(18943, data.me)
         if data.gcd > 0.4: return
