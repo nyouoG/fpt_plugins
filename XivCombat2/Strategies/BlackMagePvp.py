@@ -90,7 +90,7 @@ def get_buff(data: LogicData):
             break
     if data.gauge.umbralStacks > 0:
         b *= 1.2
-    return b
+    return b * 0.95
 
 
 class BlackMagePvpLogic(Strategy):
@@ -137,8 +137,8 @@ class BlackMagePvpLogic(Strategy):
         has_speed = 1987 in data.effects or self.buff > perf_counter() - 1
         if data.gauge.foulCount:
             kill_line = 2400 * get_buff(data)
-            kill_line_targets = [enemy for enemy in enemies_25 if enemy.currentHP < kill_line]
-            if kill_line_targets: return UseAbility(17774, max(kill_line_targets, key=lambda x: x.currentHP))
+            kill_line_targets = [enemy for enemy in enemies_25 if enemy.enemy.currentHP < kill_line]
+            if kill_line_targets: return UseAbility(17774, max(kill_line_targets, key=lambda x: x.enemy.currentHP).enemy)
         if enemies_25_aoe and data.gauge.umbralStacks > 0:
             if 1365 in data.effects and not has_speed:
                 aoe_target = max(enemies_25_aoe, key=lambda x: (x.total_aoe, x.total_aoe_non_thunder))
