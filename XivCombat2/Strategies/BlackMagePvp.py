@@ -101,7 +101,6 @@ class BlackMagePvpLogic(Strategy):
         super().__init__(config)
         self.buff = 0
         self.s = 0
-        self.q = []
 
     def process_ability_use(self, data: LogicData, action_id: int, target_id: int) -> Optional[Tuple[int, int]]:
         if action_id == 8869:
@@ -125,11 +124,11 @@ class BlackMagePvpLogic(Strategy):
             if enemies_25:
                 target = max(enemies_25_aoe, key=lambda x: x.total_aoe) if enemies_25_aoe else min(enemies_25, key=lambda x: x.enemy.currentHP)
                 return 3361, target.enemy.id
+        elif action_id == 17685:
+            self.buff = perf_counter()
+            return
 
     def common(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
-        if self.q:
-            a_id, t = self.q.pop(0)
-            return UseAbility(a_id, t)
         if data.me.currentHP / data.me.maxHP <= 0.7 and data[18943] <= 30:
             return UseAbility(18943, data.me)
         if data.gcd > 0.4: return
@@ -141,21 +140,24 @@ class BlackMagePvpLogic(Strategy):
             kill_line_targets = [enemy for enemy in enemies_25 if enemy.currentHP < kill_line]
             if kill_line_targets: return UseAbility(17774, max(kill_line_targets, key=lambda x: x.currentHP))
         if enemies_25_aoe and data.gauge.umbralStacks > 0:
-            if 1365 in data.effects:
+            if 1365 in data.effects and not has_speed:
                 aoe_target = max(enemies_25_aoe, key=lambda x: (x.total_aoe, x.total_aoe_non_thunder))
                 if aoe_target.total_aoe > (2 if data.effects[1365].timer > 5 else 1):
                     return UseAbility(18936, aoe_target.enemy)
             enemies_25_thunder = [enemy for enemy in enemies_25_aoe if enemy.total_aoe_thunder]
             if enemies_25_thunder:
                 aoe_target = max(enemies_25_thunder, key=lambda x: x.total_aoe)
-                if data.gauge.foulCount and (data.gauge.foulCount > 1 or aoe_target.total_aoe > 3):
+                if data.gauge.foulCount > 1:
                     return UseAbility(8865, aoe_target.enemy)
                 if self.buff < perf_counter() - 15 and data.me.currentMP >= 4000 and aoe_target.total_aoe > 2:
                     self.buff = perf_counter()
                     return UseAbility(17685)
-                if has_speed:
-                    return UseAbility(aoe(data), aoe_target.enemy)
+                if has_speed: return UseAbility(aoe(data), aoe_target.enemy)
+                if data.gauge.foulCount and aoe_target.total_aoe > 3:
+                    return UseAbility(8865, aoe_target.enemy)
             aoe_target = max(enemies_25_aoe, key=lambda x: (x.total_aoe_non_thunder, x.total_aoe))
+            if has_speed:
+                return UseAbility(aoe(data), aoe_target.enemy)
             if aoe_target.total_aoe_non_thunder > 1 and data.gauge.umbralMilliseconds > 3000:
                 return UseAbility(18935, aoe_target.enemy)
             if not data.is_moving:
