@@ -108,8 +108,11 @@ class LogicData(object):
 
     @cache
     def target_action_check(self, action_id, target):
+        o = self.me.pos.r
         self.me.pos.r = self.me.target_radian(target)
-        return not Api.action_distance_check(action_id, self.me, target)
+        ans = not Api.action_distance_check(action_id, self.me, target)
+        self.me.pos.r = o
+        return ans
 
     @cached_property
     def valid_enemies(self):
