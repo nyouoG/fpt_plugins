@@ -15,7 +15,7 @@ command = "@cutscene"
 
 _logger = Logger("CutsceneSkipper")
 _storage = get_module_storage("CutsceneSkipper")
-sig = "75 33 48 8B 0D ?? ?? ?? ?? BA ?? 00 00 00 48 83 C1 10 E8 ?? ?? ?? ?? 83 78"
+sig = "48 8B 01 8B D7 FF 90 ? ? ? ? 84 C0 ? ? 48 8B 0D ? ? ? ? BA ? ? ? ? 48 83 C1 10 E8 ? ? ? ? 83 78 20 00 ? ?"
 addr = AddressManager(_storage.data, _logger).get("addr", scan_pattern, sig)
 _storage.save()
 
@@ -23,8 +23,8 @@ _ver_storage = _storage.data[FFxiv_Version]
 
 _code = read_memory(
     StructFactory.OffsetStruct({
-        "mark1": (c_ubyte * 2,0),
-        "mark2": (c_ubyte * 2, 0x1b)
+        "mark1": (c_ubyte * 2, 0xd),
+        "mark2": (c_ubyte * 2, 0x28)
     }), addr)
 
 
@@ -47,7 +47,7 @@ def patch():
 
 def dispatch():
     if "original1" not in _ver_storage or "original2" not in _ver_storage:
-        raise Exception("original code not found")
+        raise Exception("original code not found, did you patch it?")
 
     write_bytes(addressof(_code.mark1), bytes(_ver_storage["original1"]))
     write_bytes(addressof(_code.mark2), bytes(_ver_storage["original2"]))
