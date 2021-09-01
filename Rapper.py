@@ -1,4 +1,4 @@
-from FFxivPythonTrigger import PluginBase, hook, api
+from FFxivPythonTrigger import PluginBase, api
 from ctypes import *
 
 from FFxivPythonTrigger.AddressManager import AddressManager
@@ -15,14 +15,14 @@ class Rapper(PluginBase):
     def __init__(self):
         super().__init__()
 
-        class SwingReadHook(hook.Hook):
+        class SwingReadHook(self.PluginHook):
             argtypes = [c_uint, c_int64, c_uint, c_int64]
             restype = c_int
 
             def hook_function(_self, *args):
                 return max(int(_self.original(*args) - self.reduce * 1000), 0)
 
-        class SwingSyncHook(hook.Hook):
+        class SwingSyncHook(self.PluginHook):
             argtypes = [c_float]
             restype = c_float
 
@@ -31,20 +31,12 @@ class Rapper(PluginBase):
 
         self.reduce = 0
         am = AddressManager(self.storage.data, self.logger)
-        self.swing_sync_hook = SwingSyncHook(am.get('swing_sync', scan_pattern, sig_sync))
-        self.swing_read_hook = SwingReadHook(am.get('swing_read', scan_pattern, sig_read))
+        self.swing_sync_hook = SwingSyncHook(am.get('swing_sync', scan_pattern, sig_sync), True)
+        self.swing_read_hook = SwingReadHook(am.get('swing_read', scan_pattern, sig_read), True)
         self.storage.save()
         api.command.register(command, self.process_command)
 
-    def _start(self):
-        self.swing_sync_hook.install()
-        self.swing_read_hook.install()
-        self.swing_sync_hook.enable()
-        self.swing_read_hook.enable()
-
     def _onunload(self):
-        self.swing_sync_hook.uninstall()
-        self.swing_read_hook.uninstall()
         api.command.unregister(command)
 
     def process_command(self, args):

@@ -2,7 +2,6 @@ from ctypes import c_float, c_int64, c_ubyte
 
 from FFxivPythonTrigger import PluginBase, api
 from FFxivPythonTrigger.AddressManager import AddressManager
-from FFxivPythonTrigger.hook import Hook
 from FFxivPythonTrigger.memory import scan_address
 
 command = "@fat"
@@ -19,7 +18,7 @@ class EveryoneFat(PluginBase):
         super().__init__()
         self.fatten = 0.
 
-        class ActorHitboxGetHook(Hook):
+        class ActorHitboxGetHook(self.PluginHook):
             restype = c_float
             argtypes = [c_int64, c_ubyte]
 
@@ -36,7 +35,6 @@ class EveryoneFat(PluginBase):
 
     def _onunload(self):
         api.command.unregister(command)
-        self.actor_hitbox_get_hook.uninstall()
 
     def process_command(self, args):
         api.Magic.echo_msg(self._process_command(args))

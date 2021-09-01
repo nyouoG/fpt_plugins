@@ -5,7 +5,7 @@ from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 
 command = "@stp"
 
-PositionSetOpcode = 0x326  # cn5.45
+PositionSetOpcode = "UpdatePositionHandler"  # cn5.45
 Vector3 = OffsetStruct({
     'x': c_float,
     'z': c_float,

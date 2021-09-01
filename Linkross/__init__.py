@@ -11,7 +11,7 @@ from FFxivPythonTrigger.Utils import wait_until
 from .Networks import *
 from .Game import *
 from .Solver import SolverBase
-from .Solvers import Sample,SolverA
+from .Solvers import Sample, SolverA
 
 command = "@Linkross"
 
@@ -45,7 +45,7 @@ class Linkross(PluginBase):
     def __init__(self):
         super().__init__()
 
-        class TalkHook(Hook):
+        class TalkHook(self.PluginHook):
             restype = c_uint64
             argtypes = [c_uint64, c_uint64]
 
@@ -58,7 +58,7 @@ class Linkross(PluginBase):
         am = AddressManager(self.storage.data, self.logger)
         self.card_check_module = am.get('card_check_module', scan_address, card_check_module_sig, cmd_len=7)
         self._card_exist_func = card_exist_func(am.get('card_check_func', scan_pattern, card_check_func_sig))
-        self.talk_hook = TalkHook(am.get('talk_hook', scan_address, talk_hook_sig, cmd_len=5))
+        self.talk_hook = TalkHook(am.get('talk_hook', scan_address, talk_hook_sig, cmd_len=5), True)
         self.storage.save()
         self.register_event(f"network/recv/{recv_duel_desc_opcode}", self.init_rules)
         self.solvers = [SolverA.Solver]
@@ -76,13 +76,8 @@ class Linkross(PluginBase):
     def card_exist(self, card_id: int):
         return bool(self._card_exist_func(self.card_check_module, card_id))
 
-    def _start(self):
-        self.talk_hook.install()
-        self.talk_hook.enable()
-
     def _onunload(self):
         api.command.unregister(command)
-        self.talk_hook.uninstall()
 
     def init_rules(self, event):
         data = recv_duel_desc_pack.from_buffer(event.raw_msg)
@@ -122,16 +117,16 @@ class Linkross(PluginBase):
         game.place_card(r_data.block_id, r_data.hand_id, r_data.card_id)
         win = game.win()
         while win is None:
-            #self.logger(game)
+            # self.logger(game)
             if game.current_player == BLUE:
-                choose=solver.solve(game, r_data.force_hand_id)
-                #self.logger(choose)
+                choose = solver.solve(game, r_data.force_hand_id)
+                # self.logger(choose)
                 r_data = place_card(event_id, game.round, *choose)
             else:
                 r_data = place_card(event_id, game.round)
             game.place_card(r_data.block_id, r_data.hand_id, r_data.card_id)
             win = game.win()
-        #self.logger(game)
+        # self.logger(game)
         self.logger("Blue win!" if win == BLUE else "Red win!" if win == RED else "Draw!")
         solver.end(game)
         end_game(event_id)

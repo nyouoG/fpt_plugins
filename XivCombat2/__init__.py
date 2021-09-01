@@ -9,7 +9,6 @@ from traceback import format_exc
 from FFxivPythonTrigger import PluginBase, frame_inject, api
 from FFxivPythonTrigger.AddressManager import AddressManager
 from FFxivPythonTrigger.SaintCoinach import realm
-from FFxivPythonTrigger.hook import Hook
 from FFxivPythonTrigger.memory import scan_pattern, scan_address
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 
@@ -81,7 +80,7 @@ class XivCombat2(PluginBase):
     def __init__(self):
         super().__init__()
 
-        class HotbarProcessHook(Hook):
+        class HotbarProcessHook(self.PluginHook):
             restype = c_ubyte
             argtypes = [c_int64, POINTER(HotbarBlock)]
 
@@ -130,7 +129,7 @@ class XivCombat2(PluginBase):
             })
         )
         am = AddressManager(self.storage.data, self.logger)
-        self.hotbar_process_hook = HotbarProcessHook(am.get('hotbar_process', scan_pattern, hotbar_process_sig))
+        self.hotbar_process_hook = HotbarProcessHook(am.get('hotbar_process', scan_pattern, hotbar_process_sig), True)
         Api._func_action_data = action_data_interface(am.get('action_data', scan_address, action_data_sig, cmd_len=5))
         Api._func_can_use_action_to = can_use_action_interface(am.get('can_use_action_to', scan_pattern, can_use_action_sig))
         Api._func_action_distance_check = action_distance_check_interface(am.get('action_distance_check', scan_pattern, action_distance_check_sig))
@@ -147,15 +146,12 @@ class XivCombat2(PluginBase):
 
     def _onunload(self):
         api.command.unregister(command)
-        self.hotbar_process_hook.uninstall()
         self.work = False
         self.main_mission.join(timeout=2)
         # frame_inject.unregister_continue_call(self.process)
 
     def _start(self):
         self.logger(self.config.get_dict())
-        self.hotbar_process_hook.install()
-        self.hotbar_process_hook.enable()
         self.work = True
         self.logger("start combat thread")
         while self.work:  # 独立线程版本

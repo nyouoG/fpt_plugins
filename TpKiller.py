@@ -8,6 +8,7 @@ command = "@tpKill"
 ToDo:???
 """
 
+
 def get_pos():
     me = api.Coordinate()
     return (me.x, me.y, me.z)
@@ -33,7 +34,7 @@ class TpKiller(PluginBase):
         frame_inject.register_continue_call(self.work)
         api.command.register(command, self.process_command)
 
-    def try_kill(self,reason):
+    def try_kill(self, reason):
         if self.test:
             api.Magic.echo_msg("kill!!! %s" % reason)
         else:

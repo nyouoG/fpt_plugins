@@ -27,12 +27,9 @@ class XivCombo(PluginBase):
     def __init__(self):
         super().__init__()
 
-        class OnGetIconHook(Hook):
+        class OnGetIconHook(self.PluginHook):
             restype = c_ulonglong
             argtypes = [c_ubyte, c_uint]
-
-            def __init__(self, func_address: int):
-                super().__init__(func_address)
 
             def hook_function(_self, a1, action_id):
                 if action_id in self.enable_combos:
@@ -44,7 +41,7 @@ class XivCombo(PluginBase):
                         self.logger.error("error occured:\n" + format_exc())
                 return _self.original(a1, action_id)
 
-        class OnCheckIsIconReplaceableHook(Hook):
+        class OnCheckIsIconReplaceableHook(self.PluginHook):
             restype = c_ulonglong
             argtypes = [c_uint]
 
@@ -64,8 +61,8 @@ class XivCombo(PluginBase):
         is_icon_replaceable_addr = am.get("is icon replaceable", scan_pattern, is_icon_replaceable_sig)
         self.enable_combos = dict()
         self.enable_combos_name = dict()
-        self.on_get_icon_hook = OnGetIconHook(get_icon_addr)
-        self.on_is_icon_replaceable_hook = OnCheckIsIconReplaceableHook(is_icon_replaceable_addr)
+        self.on_get_icon_hook = OnGetIconHook(get_icon_addr, True)
+        self.on_is_icon_replaceable_hook = OnCheckIsIconReplaceableHook(is_icon_replaceable_addr, True)
         self.load_combo()
         self.storage.save()
 
@@ -87,16 +84,8 @@ class XivCombo(PluginBase):
         self.enable_combos = temp
         self.enable_combos_name = temp_name
 
-    def _start(self):
-        self.on_get_icon_hook.install()
-        self.on_is_icon_replaceable_hook.install()
-        self.on_get_icon_hook.enable()
-        self.on_is_icon_replaceable_hook.enable()
-
     def _onunload(self):
         api.command.unregister(command)
-        self.on_get_icon_hook.uninstall()
-        self.on_is_icon_replaceable_hook.uninstall()
 
     def process_command(self, args):
         try:
