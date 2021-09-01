@@ -46,6 +46,10 @@ from .. import Define
 rdm_aoe_angle = radians(120)
 
 
+def select_res_target_key(actor):
+    return actor.job.is_tank, actor.job.is_healer, actor.job.is_dps
+
+
 def search_swift_res(data: LogicData):
     if data.me.level < 64: return
     k = data.config.custom_settings.setdefault('swift_res', 'none')
@@ -57,9 +61,8 @@ def search_swift_res(data: LogicData):
         d = data.valid_players
     else:
         d = list()
-    for member in d:
-        if not member.currentHP and 148 not in member.effects.get_dict() and data.actor_distance_effective(member) < 30:
-            return member
+    d = [member for member in d if not member.currentHP and 148 not in member.effects.get_dict() and data.actor_distance_effective(member) < 30]
+    if d: return max(d, key=select_res_target_key)
 
 
 def count_enemy(data: LogicData, skill_type: int):
@@ -121,7 +124,7 @@ class RDMLogic(Strategy):
         if data.me.level >= 52 and count_enemy(data, 2) > 2 and min_mana >= (90 if not res else 20 if data[7521] else 50):
             return UseAbility(7513)  # 人数够了就画圆
 
-        "处理魔连击开始"
+        # 处理魔连击开始
         if data.combo_id == 7504 and lv >= 35:
             return UseAbility(7512) if dis < 4 else None
         elif data.combo_id == 7512 and lv >= 50:
@@ -134,7 +137,7 @@ class RDMLogic(Strategy):
             return UseAbility(7526 if use_white else 7525)
         elif (data.combo_id == 7525 or data.combo_id == 7526) and lv >= 80:
             return UseAbility(16530)
-        "处理魔连击结束"
+        # 处理魔连击结束
 
         if min_mana >= 5 and data.me.level >= 76:  # 续斩处理溢出魔元、走位
             if max_mana >= (90 if res else 97) and dis > 10: return UseAbility(16529)

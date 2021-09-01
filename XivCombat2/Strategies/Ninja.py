@@ -164,6 +164,8 @@ class NinjaLogic(Strategy):
         super().__init__(config)
         self.effects_temp = dict()
         self.combo = []
+    def process_ability_use(self, data: LogicData, action_id: int, target_id: int) -> Optional[Tuple[int, int]]:
+        pass
 
     def have_effect(self, data: LogicData, effect_id: int, allow_time=2):
         return effect_id in data.effects or self.effects_temp.setdefault(effect_id, 0) > time.time() - allow_time

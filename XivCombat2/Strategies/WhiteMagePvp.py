@@ -110,7 +110,7 @@ class Member(object):
 class Enemy(object):
     def __init__(self, enemy, data: LogicData):
         self.enemy = enemy
-        self.effects = enemy.effects.get_dict(source=data.me.id)
+        self.effects = enemy.effects.get_dict()
         self.hitbox = circle(enemy.pos.x, enemy.pos.y, 0.1)
         self.dis = data.actor_distance_effective(enemy)
         self.total_aoe = 0
@@ -166,9 +166,6 @@ class WhiteMagePvpLogic(Strategy):
                     member.cal_dangers(enemies)
                 for member in members.values():
                     member.sum_dangers()
-                if self.last_t < perf_counter() - 10:
-                    info('', ' / '.join([f"{member.actor.Name}({member.danger})" for member in members.values() if member.is_target]))
-                    self.last_t = perf_counter()
                 members_need_healing = [member for m_id, member in members.items() if member.is_target and member.hp_lv < 5]
                 if self.shield < perf_counter() - 30:
                     target = max([member for m_id, member in members.items() if member.is_target], key=lambda x: x.danger)
@@ -195,7 +192,7 @@ class WhiteMagePvpLogic(Strategy):
             if data.gauge.lilyStacks > 2 and data.gauge.bloodlilyStacks < 3:
                 return UseAbility(18946, data.me.id)
         if data.gcd < 0.3:
-            enemies = [Enemy(enemy, data) for enemy in data.valid_enemies if data.actor_distance_effective(enemy) < (31)]
+            enemies = [Enemy(enemy, data) for enemy in data.valid_enemies if data.actor_distance_effective(enemy) < 31]
             enemies_25 = [enemy for enemy in enemies if enemy.dis < 26 and data.target_action_check(17790, enemy.enemy)]
             if not enemies_25: return
             if data.gauge.bloodlilyStacks > 2:
