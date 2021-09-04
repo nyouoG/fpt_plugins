@@ -25,7 +25,7 @@ class EveryoneFat(PluginBase):
             def hook_function(_self, *args):
                 return _self.original(*args) + self.fatten
 
-        addr = AddressManager(self.storage.data, self.logger).get('actor_hitbox_get', scan_address, sig, cmd_len=5)
+        addr = AddressManager(self.storage.data, self.logger).get('EveryoneFat_hitbox_func', scan_address, sig, cmd_len=5)
         self.actor_hitbox_get_hook = ActorHitboxGetHook(addr)
         self.storage.save()
         api.command.register(command, self.process_command)

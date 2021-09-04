@@ -33,8 +33,8 @@ class SpeedHack(PluginBase):
                 return _self.original(a1) * self.percent
 
         am = AddressManager(self.storage.data, self.logger)
-        addrMain = am.get('main', scan_pattern, sig_main)
-        addrFly = am.get('fly', scan_pattern, sig_fly)
+        addrMain = am.get('speedh_main', scan_pattern, sig_main)
+        addrFly = am.get('speedh_fly', scan_pattern, sig_fly)
         self.storage.save()
         self.hook_main = SpeedHookMain(addrMain, True)
         self.hook_fly = SpeedHookFly(addrFly, True)

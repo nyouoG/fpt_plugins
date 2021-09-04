@@ -1,6 +1,4 @@
 from FFxivPythonTrigger.memory import scan_pattern, StructFactory, write_bytes, read_memory
-from FFxivPythonTrigger.Logger import Logger
-from FFxivPythonTrigger.Storage import get_module_storage
 from FFxivPythonTrigger.AddressManager import AddressManager
 from FFxivPythonTrigger import FFxiv_Version, PluginBase, api
 from ctypes import c_ubyte, addressof
@@ -12,47 +10,8 @@ format:     /e @cutscene [p(patch)/d(dispatch)]
 """
 
 command = "@cutscene"
-
-_logger = Logger("CutsceneSkipper")
-_storage = get_module_storage("CutsceneSkipper")
 sig = "75 33 48 8B 0D ?? ?? ?? ?? BA ?? 00 00 00 48 83 C1 10 E8 ?? ?? ?? ?? 83 78"
-addr = AddressManager(_storage.data, _logger).get("addr", scan_pattern, sig)
-_storage.save()
 
-_ver_storage = _storage.data[FFxiv_Version]
-
-_code = read_memory(
-    StructFactory.OffsetStruct({
-        "mark1": (c_ubyte * 2,0),
-        "mark2": (c_ubyte * 2, 0x1b)
-    }), addr)
-
-
-def is_patched():
-    return _code.mark1[:] == [0x90, 0x90]
-
-
-def patch():
-    if _code.mark1[:] != [0x90, 0x90]:
-        _ver_storage["original1"] = _code.mark1[:]
-    if _code.mark2[:] != [0x90, 0x90]:
-        _ver_storage["original2"] = _code.mark2[:]
-    _storage.save()
-
-    write_bytes(addressof(_code.mark1), b'\x90' * 2)
-    write_bytes(addressof(_code.mark2), b'\x90' * 2)
-
-    return "patch success"
-
-
-def dispatch():
-    if "original1" not in _ver_storage or "original2" not in _ver_storage:
-        raise Exception("original code not found")
-
-    write_bytes(addressof(_code.mark1), bytes(_ver_storage["original1"]))
-    write_bytes(addressof(_code.mark2), bytes(_ver_storage["original2"]))
-
-    return "dispatch success"
 
 class CutsceneSkipper(PluginBase):
     name = "Cutscene Skipper"
@@ -60,9 +19,39 @@ class CutsceneSkipper(PluginBase):
     repo_path = 'CutsceneSkipper.py'
     hash_path = __file__
 
+    def is_patched(self):
+        return self.code.mark1[:] == [0x90, 0x90]
+
+    def patch(self):
+        if self.code.mark1[:] != [0x90, 0x90]:
+            self.ver_storage["original1"] = self.code.mark1[:]
+        if self.code.mark2[:] != [0x90, 0x90]:
+            self.ver_storage["original2"] = self.code.mark2[:]
+        self.storage.save()
+
+        write_bytes(addressof(self.code.mark1), b'\x90' * 2)
+        write_bytes(addressof(self.code.mark2), b'\x90' * 2)
+
+        return "patch success"
+
+    def dispatch(self):
+        if "original1" not in self.ver_storage or "original2" not in self.ver_storage:
+            raise Exception("original code not found")
+
+        write_bytes(addressof(self.code.mark1), bytes(self.ver_storage["original1"]))
+        write_bytes(addressof(self.code.mark2), bytes(self.ver_storage["original2"]))
+
+        return "dispatch success"
 
     def __init__(self):
         super().__init__()
+        self.code = read_memory(
+            StructFactory.OffsetStruct({
+                "mark1": (c_ubyte * 2, 0),
+                "mark2": (c_ubyte * 2, 0x1b)
+            }), AddressManager(self.storage.data, self.logger).get("cskip_addr", scan_pattern, sig))
+        self.ver_storage = self.storage.data.setdefault(FFxiv_Version, dict())
+        self.storage.save()
         api.command.register(command, self.process_command)
 
     def _onunload(self):
@@ -74,14 +63,14 @@ class CutsceneSkipper(PluginBase):
     def _process_command(self, arg):
         try:
             if not arg:
-                if is_patched():
-                    return dispatch()
+                if self.is_patched():
+                    return self.dispatch()
                 else:
-                    return patch()
+                    return self.patch()
             if arg[0] == "patch" or arg[0] == "p":
-                return patch()
+                return self.patch()
             elif arg[0] == "dispatch" or arg[0] == "d":
-                return dispatch()
+                return self.dispatch()
             else:
                 return "unknown arguments {}".format(arg[0])
         except Exception as e:

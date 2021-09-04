@@ -19,7 +19,7 @@ command = "@sjump"
 _logger = Logger("SuperJump")
 _storage = get_module_storage("SuperJump")
 sig = "66 66 26 41"
-addr = AddressManager(_storage.data, _logger).get("addr", scan_pattern, sig)
+addr = AddressManager(_storage.data, _logger).get("sjump", scan_pattern, sig)
 _storage.save()
 
 default = 10.4

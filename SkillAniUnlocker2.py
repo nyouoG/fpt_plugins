@@ -54,9 +54,9 @@ class SkillAniUnlocker2(PluginBase):
         self.lock_time = DEFAULT_HACK_LOCK
         self.enable = False
         am = AddressManager(self.storage.data, self.logger)
-        self.hook = ActionHook(am.get('addr', scan_pattern, sig))
-        self.fix_addr = am.get('fix', scan_pattern, sig_fix)
-        self.ninja_stiff_addr = am.get('ninja_stiff', find_ninj_stiff_addr, None)
+        self.hook = ActionHook(am.get('salock_action', scan_pattern, sig))
+        self.fix_addr = am.get('salock_fix', scan_pattern, sig_fix)
+        self.ninja_stiff_addr = am.get('salock_ninja_stiff', find_ninj_stiff_addr, None)
         self.storage.save()
 
         if not self.is_ninja_patch():

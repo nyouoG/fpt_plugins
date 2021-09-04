@@ -31,10 +31,11 @@ class Rapper(PluginBase):
 
         self.reduce = 0
         am = AddressManager(self.storage.data, self.logger)
-        self.swing_sync_hook = SwingSyncHook(am.get('swing_sync', scan_pattern, sig_sync), True)
-        self.swing_read_hook = SwingReadHook(am.get('swing_read', scan_pattern, sig_read), True)
+        self.swing_sync_hook = SwingSyncHook(am.get('rap_swing_sync', scan_pattern, sig_sync), True)
+        self.swing_read_hook = SwingReadHook(am.get('rap_swing_read', scan_pattern, sig_read), True)
         self.storage.save()
         api.command.register(command, self.process_command)
+
 
     def _onunload(self):
         api.command.unregister(command)

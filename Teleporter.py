@@ -50,7 +50,6 @@ functions (*[arg] is optional args):
 command = "@tp"
 pattern_main = "f3 0f ?? ?? ?? ?? ?? ?? eb ?? 48 8b ?? ?? ?? ?? ?? e8 ?? ?? ?? ?? 48 85"
 pattern_fly = "48 8d ?? ?? ?? ?? ?? 84 c0 75 ?? 48 8d ?? ?? ?? ?? ?? 80 79 66 ?? 74 ?? e8 ?? ?? ?? ?? c6 87 f4 03 ?? ??"
-pattern_actor_move = "40 53 48 83 EC ? F3 0F 11 89 ? ? ? ? 48 8B D9 F3 0F 11 91 ? ? ? ?"
 
 Vector = OffsetStruct({
     "x": (c_float, 0),
@@ -71,8 +70,8 @@ class Teleporter(PluginBase):
     def __init__(self):
         super().__init__()
         am = AddressManager(self.storage.data, self.logger)
-        ptr_main = am.get("main ptr", scan_address, pattern_main, add=0x14, cmd_len=8)
-        addr_fly = am.get("fly addr", scan_address, pattern_fly, cmd_len=7, add=16)
+        ptr_main = am.get("tp_main", scan_address, pattern_main, add=0x14, cmd_len=8)
+        addr_fly = am.get("tp_fly", scan_address, pattern_fly, cmd_len=7, add=16)
         self.storage.save()
 
         self._coor_main = read_memory(MainCoor, ptr_main)

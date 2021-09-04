@@ -21,8 +21,8 @@ class PosLocker(PluginBase):
         self.statements = set()
 
         am = AddressManager(self.storage.data, self.logger)
-        ptr_main = am.get("main ptr", scan_address, pattern_main, add=0x14, cmd_len=8)
-        addr_move_func = am.get("move func addr", scan_pattern, pattern_actor_move)
+        ptr_main = am.get("posL_main_ptr", scan_address, pattern_main, add=0x14, cmd_len=8)
+        addr_move_func = am.get("posL_move_func", scan_pattern, pattern_actor_move)
         self.storage.save()
 
         self.main_addr = cast(ptr_main, POINTER(c_int64))
