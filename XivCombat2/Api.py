@@ -17,6 +17,17 @@ ffxiv_dx11.exe+80F3B1
 ffxiv_dx11.exe+62B510
 """
 
+_pvp_action_data = type("temp", (object,), {'action1': 0, 'action2': 0})()
+
+
+def pvp_action_cd_group_id(action_id):
+    if _pvp_action_data.action1 == action_id:
+        return 26
+    elif _pvp_action_data.action2 == action_id:
+        return 27
+    else:
+        return 0
+
 
 @cache
 def _action_data(action_id):

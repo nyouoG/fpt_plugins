@@ -82,8 +82,8 @@ class PaladinLogic(Strategy):
         cnt = count_enemy(data, 0)
         if data.me.level >= 40 and data.combo_id == 7381: return UseAbility(16457)
         if cnt > 1 and data.me.level >= 6:
-            if 1368 in data.effects and data.me.level >= 72 and (not data.is_moving or data.me.lv >= 78):
-                return UseAbility(16459)
+            if 1368 in data.effects and data.me.level >= 72 and (not data.is_moving or data.me.level >= 78):
+                return UseAbility(16458 if data.effects[1368].timer > 3 and data.me.currentMP >= 4000 or data.me.level<80 else 16459)
             else:
                 return UseAbility(7381)
         if data.target_distance > 3: return
@@ -100,7 +100,7 @@ class PaladinLogic(Strategy):
                 return UseAbility(16460)
             return UseAbility(21)
         if 1368 in data.effects and (not data.is_moving or data.me.level >= 78):
-            return UseAbility(7384 if data.effects[1368].timer > 3 and data.me.currentMP >= 4000 else 16459)
+            return UseAbility(7384 if data.effects[1368].timer > 3 and data.me.currentMP >= 4000 or data.me.level<80 else 16459)
         else:
             return UseAbility(9)
 

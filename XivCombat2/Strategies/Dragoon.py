@@ -1,6 +1,6 @@
 from FFxivPythonTrigger.Utils import rotated_rect
 from ..Strategy import *
-from .. import Define
+from .. import Define, Api
 
 """
 7541,内丹,8
@@ -75,6 +75,11 @@ class DragoonLogic(Strategy):
 
     def __init__(self, config: 'CombatConfig'):
         super().__init__(config)
+
+    def process_ability_use(self, data: LogicData, action_id: int, target_id: int) -> Optional[Tuple[int, int]]:
+        if action_id in {7398}:
+            t = Api.get_mo_target()
+            if t: return action_id, t.id
 
     def global_cool_down_ability(self, data: LogicData) -> Optional[Union[UseAbility, UseItem, UseCommon]]:
         cnt = cnt_enemy(data)

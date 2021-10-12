@@ -9,7 +9,7 @@ from traceback import format_exc
 from FFxivPythonTrigger import PluginBase, frame_inject, api
 from FFxivPythonTrigger.AddressManager import AddressManager
 from FFxivPythonTrigger.SaintCoinach import realm
-from FFxivPythonTrigger.memory import scan_pattern, scan_address
+from FFxivPythonTrigger.memory import scan_pattern, scan_address, read_memory
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 
 from . import Config, Api, LogicData, Strategy, Define
@@ -26,6 +26,11 @@ action_data_interface = CFUNCTYPE(c_int64, c_int64)
 action_data_sig = "E8 ? ? ? ? 48 8B F0 48 85 C0 0F 84 ? ? ? ? BA ? ? ? ? 48 8B CB E8 ? ? ? ? 48 8B 0D ? ? ? ?"
 action_distance_check_interface = CFUNCTYPE(c_int64, c_uint, c_int64, c_int64)
 action_distance_check_sig = "48 89 5C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 89 4C 24 ?"
+pvp_action_data_sig = "48 8D 0D ? ? ? ? 40 0F 95 C6"
+pvp_action_data_struct = OffsetStruct({
+    'action1': (c_uint, 32),
+    'action2': (c_uint, 36)
+})
 
 min_hp_re = re.compile(r"\[min_hp:(\d+)]")
 
@@ -133,6 +138,7 @@ class XivCombat2(PluginBase):
         Api._func_action_data = action_data_interface(am.get('action_data', scan_address, action_data_sig, cmd_len=5))
         Api._func_can_use_action_to = can_use_action_interface(am.get('can_use_action_to', scan_pattern, can_use_action_sig))
         Api._func_action_distance_check = action_distance_check_interface(am.get('action_distance_check', scan_pattern, action_distance_check_sig))
+        Api._pvp_action_data = read_memory(pvp_action_data_struct, am.get('pvp_action_data', scan_address, pvp_action_data_sig, cmd_len=7))
         Api._action_data.cache_clear()
         self.save_config()
 

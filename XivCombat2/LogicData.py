@@ -283,6 +283,7 @@ class LogicData(object):
         """
         Api.reset_cd(action_sheet[action_id]['CooldownGroup'])
 
+    @cache
     def skill_cd(self, action_id: int):
         """remain time of an action cool down"""
 
@@ -291,6 +292,16 @@ class LogicData(object):
             return 1e+99
         else:
             return Api.get_cd_group(row['CooldownGroup']).remain
+
+    @cache
+    def pvp_skill_cd(self, action_id: int):
+        """remain time of an pvp action cool down"""
+
+        gp = Api.pvp_action_cd_group_id(action_id)
+        if gp:
+            return Api.get_cd_group(gp).remain
+        else:
+            return None
 
     def lv_skill(self, base_id, *statements):
         """(unused) lower level skill select"""
