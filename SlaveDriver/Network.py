@@ -4,9 +4,13 @@ from FFxivPythonTrigger import api
 
 from FFxivPythonTrigger.memory.StructFactory import OffsetStruct
 
-# cn5.5
-ListReadyOpcode = 282
-AdventureConfirmedOpcode = 514
+# cn5.55
+ListReadyOpcode = 658
+AdventureConfirmedOpcode = 958
+
+# # cn5.5
+# ListReadyOpcode = 282
+# AdventureConfirmedOpcode = 514
 
 # # cn5.45
 # ListReadyOpcode = 262
@@ -15,6 +19,7 @@ AdventureConfirmedOpcode = 514
 # length
 # ListReadyOpcode len:24
 # AdventureConfirmedOpcode len:96
+
 ClientEventStart = OffsetStruct({
     'target_id': c_uint,
     'unk0': c_uint,

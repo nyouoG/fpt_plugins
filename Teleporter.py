@@ -1,7 +1,6 @@
 from FFxivPythonTrigger import PluginBase, api, frame_inject
 from FFxivPythonTrigger.AddressManager import AddressManager
-from FFxivPythonTrigger.hook import Hook
-from FFxivPythonTrigger.memory import scan_address, read_memory, scan_pattern
+from FFxivPythonTrigger.memory import scan_address, read_memory
 from FFxivPythonTrigger.memory.StructFactory import PointerStruct, OffsetStruct
 from ctypes import *
 import math
@@ -78,7 +77,6 @@ class Teleporter(PluginBase):
         self.coor_fly = read_memory(Vector, addr_fly)
 
         api.command.register(command, self.process_command)
-        self.lock_coor = None
         self.register_api('Coordinate', lambda: self.coor_main)
 
     @property

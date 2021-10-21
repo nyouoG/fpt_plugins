@@ -35,7 +35,7 @@ def find_bell_id():
 
 @cache
 def mission_name(mission_id):
-    return mission_sheet[mission_id]['Task']['Name']
+    return str(mission_sheet[mission_id]['Task'])
 
 
 class SlaveDriver(PluginBase):

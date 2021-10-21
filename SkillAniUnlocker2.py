@@ -18,8 +18,20 @@ def find_ninj_stiff_addr(_=None):
 a4_struct = OffsetStruct({
     'action_id': (c_ushort, 28),
     'action_id_2': (c_uint, 8),
-    'time': (c_float, 16)
+    'time': (c_float, 16),
+    'target_cnt': (c_ubyte, 33),
 })
+
+ServerActionEffectEntry = OffsetStruct({
+    'type': c_ubyte,
+    'param1': c_ubyte,
+    'param2': c_ubyte,
+    'param3': c_ubyte,
+    'param4': c_ubyte,
+    'param5': c_ubyte,
+    'main_param': c_ushort,
+})
+effect_size = sizeof(ServerActionEffectEntry)
 
 DEFAULT_LOCK_TIME = 0.6
 DEFAULT_HACK_LOCK = 0.15
@@ -41,18 +53,28 @@ class SkillAniUnlocker2(PluginBase):
         super().__init__()
 
         class ActionHook(Hook):
-            argtypes = [c_int, c_int64, c_int64, c_int64, c_int64, c_int64]
+            argtypes = [c_int, c_int64, c_int64, POINTER(a4_struct), POINTER(ServerActionEffectEntry * 8), POINTER(c_ulonglong)]
             restype = c_int64
 
-            def hook_function(_self, a1, a2, a3, a4, a5, a6):
+            def hook_function(_self, a1, a2, a3, a4, effects, target_ids):
+                data = a4[0]
                 if self.enable:
-                    data = read_memory(a4_struct, a4)
                     if data.time > self.lock_time:
                         data.time = self.lock_time
-                return _self.original(a1, a2, a3, a4, a5, a6)
+                if self.anti_knock:
+                    for i in range(data.target_cnt):
+                        if target_ids[i] != api.XivMemory.player_info.id: continue
+                        for j, e in enumerate(effects[i]):
+                            if not e.type:
+                                break
+                            elif e.type == 0x20 or e.type == 0x21:
+                                s = addressof(e)
+                                write_ubytes(s, read_ubytes(s + effect_size, (7 - j) * effect_size))
+                return _self.original(a1, a2, a3, a4, effects, target_ids)
 
         self.lock_time = DEFAULT_HACK_LOCK
         self.enable = False
+        self.anti_knock = False
         am = AddressManager(self.storage.data, self.logger)
         self.hook = ActionHook(am.get('salock_action', scan_pattern, sig))
         self.fix_addr = am.get('salock_fix', scan_pattern, sig_fix)
@@ -108,7 +130,18 @@ class SkillAniUnlocker2(PluginBase):
                             return "unknown arguments {}".format(args[1])
                     else:
                         self.patch_ninja(not self.is_ninja_patch())
-                    return(f"ninja patch:{self.is_ninja_patch()}")
+                    return f"ninja patch:{self.is_ninja_patch()}"
+                elif args[0] == 'anti_knock':
+                    if len(args) > 1:
+                        if args[1] == "patch" or args[0] == "p":
+                            self.anti_knock = True
+                        elif args[1] == "dispatch" or args[0] == "d":
+                            self.anti_knock = False
+                        else:
+                            return "unknown arguments {}".format(args[1])
+                    else:
+                        self.anti_knock = not self.anti_knock
+                    return f"anti knock: {self.anti_knock}"
                 else:
                     return "unknown arguments {}".format(args[0])
             else:

@@ -5,8 +5,10 @@ from FFxivPythonTrigger.memory.StructFactory import OffsetStruct, EnumStruct
 
 command = "@CTT"
 
-recv_opcode = 0x335  # cn5.5
-send_opcode = 0x105  # cn5.5
+recv_opcode = 403  # cn5.55
+
+# recv_opcode = 0x335  # cn5.5
+# send_opcode = 0x105  # cn5.5
 
 # recv_opcode = 0x360  # cn5.45
 # send_opcode = 0x39d  # cn5.45
@@ -136,8 +138,8 @@ class CutTheTree(PluginBase):
         self.solver = Solver()
 
         self.register_event(f'network/recv/{recv_opcode}', self.recv_work, limit_sec=0)
-        self.register_event(f'network/send/{send_opcode}', self.send_work, limit_sec=0)
-        api.XivNetwork.register_makeup(send_opcode, self.makeup_data)
+        self.register_event('network/send_event_action', self.send_work, limit_sec=0)
+        api.XivNetwork.register_makeup("EventAction", self.makeup_data)
         api.command.register(command, self.process_command)
 
     def process_command(self, args):
@@ -154,11 +156,11 @@ class CutTheTree(PluginBase):
         self.start_new()
 
     def _onunload(self):
-        api.XivNetwork.unregister_makeup(send_opcode, self.makeup_data)
+        api.XivNetwork.unregister_makeup("EventAction", self.makeup_data)
         api.command.unregister(command)
 
     def send(self, msg):
-        api.XivNetwork.send_messages([(send_opcode, bytearray(msg))])
+        api.XivNetwork.send_messages([("EventAction", bytearray(msg))])
 
     def start_new(self, evt=None):
         if self.enable:
@@ -192,7 +194,7 @@ class CutTheTree(PluginBase):
                 self.start_new()
 
     def send_work(self, event):
-        data = send_packet.from_buffer(event.raw_msg)
+        data = send_packet.from_buffer(bytearray(event.raw_msg))
         msg = data.game_state.value()
         if msg == "Felling" or msg == "Difficulty choice":
             msg = f"{msg} << {data.param}"

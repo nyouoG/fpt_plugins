@@ -1,13 +1,21 @@
 from FFxivPythonTrigger import api
 from FFxivPythonTrigger.memory.StructFactory import *
 
+# cn5.55
+send_place_card_opcode = 756
+send_card_choose_opcode = 193
+recv_place_card_opcode = 343
+recv_duel_action_finish_opcode = 925
+recv_duel_desc_opcode = 623
+recv_game_data_opcode = 573
+
 # cn5.5
-send_place_card_opcode = 523
-send_card_choose_opcode = 626
-recv_place_card_opcode = 630
-recv_duel_action_finish_opcode = 364
-recv_duel_desc_opcode = 382
-recv_game_data_opcode = 824
+# send_place_card_opcode = 523
+# send_card_choose_opcode = 626
+# recv_place_card_opcode = 630
+# recv_duel_action_finish_opcode = 364
+# recv_duel_desc_opcode = 382
+# recv_game_data_opcode = 824
 
 # # cn5.45
 # send_place_card_opcode = 246
